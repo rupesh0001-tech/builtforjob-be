@@ -1,4 +1,4 @@
-import prisma from '../config/database';
+import prisma from '../../config/database/db';
 import { OTPType } from '@prisma/client';
 
 export class OTPService {

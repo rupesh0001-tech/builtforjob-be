@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
-import { jwtConfig } from '../config/jwt';
-import { IJWTPayload } from '../interfaces/auth.interface';
+import { jwtConfig } from '../../config/jwt/jwt.config';
+import { IJWTPayload } from '../../interfaces/auth.interface';
 
 export class JWTService {
   static generateToken(payload: IJWTPayload): string {

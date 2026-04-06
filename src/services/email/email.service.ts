@@ -1,4 +1,4 @@
-import { resend, emailConfig } from '../config/email';
+import { resend, emailConfig } from '../../config/email/resend';
 
 export class EmailService {
   static async sendOTPEmail(email: string, otp: string, firstName: string): Promise<void> {
