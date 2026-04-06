@@ -1,0 +1,62 @@
+// Prisma Database Schema
+// Run: bun run db:generate && bun run db:push
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  isVerified Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  otps              OTP[]
+  passwordResetTokens PasswordResetToken[]
+
+  @@map("users")
+}
+
+model OTP {
+  id        String   @id @default(uuid())
+  userId    String?
+  email     String
+  code      String
+  type      OTPType
+  expiresAt DateTime
+  isUsed    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([email, type, isUsed])
+  @@map("otps")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  isUsed    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token, isUsed])
+  @@map("password_reset_tokens")
+}
+
+enum OTPType {
+  REGISTRATION
+  PASSWORD_RESET
+}
