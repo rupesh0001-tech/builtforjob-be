@@ -7,6 +7,11 @@ import { JWTService } from '../../services/jwt/jwt.service';
 import { OTPType } from '@prisma/client';
 import { AuthRequest } from '../../middlewares/auth/jwt.middleware';
 
+
+// to do : don't write the code in classes and statics 
+// use simle funcs like const register = async (req: Request, res: Response) => {
+
+
 export class UserController {
   static async register(req: Request, res: Response) {
     try {
@@ -22,6 +27,7 @@ export class UserController {
       const hashedPassword = await HashService.hashPassword(password);
 
       // Create new user (initially unverified)
+      //todo : create a service to create a unverifed user and add it here 
       const user = await UserService.createUser({
         email,
         password: hashedPassword,

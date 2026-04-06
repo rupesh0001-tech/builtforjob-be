@@ -3,9 +3,9 @@ import { jwtConfig } from '../../config/jwt/jwt.config';
 import { IJWTPayload } from '../../interfaces/auth.interface';
 
 export class JWTService {
-  static generateToken(payload: IJWTPayload): string {
+  static generateToken(payload: IJWTPayload, expiresIn?: string): string {
     return jwt.sign(payload, jwtConfig.secret, {
-      expiresIn: jwtConfig.expiresIn,
+      expiresIn: expiresIn || jwtConfig.expiresIn,
     });
   }
 
