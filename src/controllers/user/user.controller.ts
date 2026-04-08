@@ -1,11 +1,11 @@
-import type { Request, Response } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { UserService } from '../../services/auth/user.service';
 import { OTPService } from '../../services/otp/otp.service';
 import { EmailService } from '../../services/email/email.service';
 import { HashService } from '../../services/hash/hash.service';
 import { JWTService } from '../../services/jwt/jwt.service';
 import { OTPType } from '@prisma/client';
-import { AuthRequest } from '../../middlewares/auth/jwt.middleware';
+import type { AuthRequest } from '../../middlewares/auth/jwt.middleware';
 
 
 // to do : don't write the code in classes and statics 
@@ -13,7 +13,7 @@ import { AuthRequest } from '../../middlewares/auth/jwt.middleware';
 
 
 export class UserController {
-  static async register(req: Request, res: Response) {
+  static async register(req: Request, res: Response, next: NextFunction) {
     try {
       const { email, password, firstName, lastName } = req.body;
 
@@ -46,12 +46,11 @@ export class UserController {
         message: 'OTP sent to your email. Please verify.',
       });
     } catch (error) {
-      console.error('Registration Error:', error);
-      return res.status(500).json({ success: false, message: 'Internal server error' });
+      next(error);
     }
   }
 
-  static async login(req: Request, res: Response) {
+  static async login(req: Request, res: Response, next: NextFunction) {
     try {
       const { email, password } = req.body;
 
@@ -85,12 +84,11 @@ export class UserController {
         },
       });
     } catch (error) {
-      console.error('Login Error:', error);
-      return res.status(500).json({ success: false, message: 'Internal server error' });
+      next(error);
     }
   }
 
-  static async forgotPassword(req: Request, res: Response) {
+  static async forgotPassword(req: Request, res: Response, next: NextFunction) {
     try {
       const { email } = req.body;
 
@@ -108,12 +106,11 @@ export class UserController {
 
       return res.json({ success: true, message: 'Password reset link sent to your email' });
     } catch (error) {
-      console.error('Forgot Password Error:', error);
-      return res.status(500).json({ success: false, message: 'Internal server error' });
+      next(error);
     }
   }
 
-  static async getProfile(req: AuthRequest, res: Response) {
+  static async getProfile(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.userId;
       if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
@@ -133,8 +130,7 @@ export class UserController {
         }
       });
     } catch (error) {
-      console.error('Profile Fetch Error:', error);
-      return res.status(500).json({ success: false, message: 'Internal server error' });
+      next(error);
     }
   }
 }

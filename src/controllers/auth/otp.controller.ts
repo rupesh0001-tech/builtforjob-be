@@ -1,11 +1,11 @@
-import { Request, Response } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { OTPService } from '../../services/otp/otp.service';
 import { UserService } from '../../services/auth/user.service';
 import { JWTService } from '../../services/jwt/jwt.service';
 import { OTPType } from '@prisma/client';
 
 export class OtpController {
-  static async verifyOtp(req: Request, res: Response) {
+  static async verifyOtp(req: Request, res: Response, next: NextFunction) {
     try {
       const { email, otp, type } = req.body;
       
@@ -36,8 +36,7 @@ export class OtpController {
         message: 'OTP verified successfully',
       });
     } catch (error) {
-      console.error('OTP Verification Error:', error);
-      return res.status(500).json({ success: false, message: 'Internal server error' });
+      next(error);
     }
   }
 }
