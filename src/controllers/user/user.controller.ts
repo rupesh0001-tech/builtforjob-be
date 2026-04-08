@@ -19,21 +19,32 @@ export class UserController {
 
       // Check if user already exists
       const existingUser = await UserService.findByEmail(email);
+      
+      let user;
       if (existingUser) {
-        return res.status(400).json({ success: false, message: 'Email already exists' });
+        if (existingUser.isVerified) {
+          return res.status(400).json({ success: false, message: 'Email already exists and is verified' });
+        }
+        
+        // Update existing unverified user with new details
+        const hashedPassword = await HashService.hashPassword(password);
+        user = await UserService.updateUser(existingUser.id, {
+          password: hashedPassword,
+          firstName,
+          lastName,
+        });
+      } else {
+        // Hash password
+        const hashedPassword = await HashService.hashPassword(password);
+
+        // Create new user (initially unverified)
+        user = await UserService.createUser({
+          email,
+          password: hashedPassword,
+          firstName,
+          lastName,
+        });
       }
-
-      // Hash password
-      const hashedPassword = await HashService.hashPassword(password);
-
-      // Create new user (initially unverified)
-      //todo : create a service to create a unverifed user and add it here 
-      const user = await UserService.createUser({
-        email,
-        password: hashedPassword,
-        firstName,
-        lastName,
-      });
 
       // Generate OTP
       const otp = await OTPService.createOTP(email, OTPType.REGISTRATION, user.id);

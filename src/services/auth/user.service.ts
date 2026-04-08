@@ -31,4 +31,11 @@ export class UserService {
       data: { isVerified: true },
     });
   }
+
+  static async updateUser(id: string, data: Partial<Omit<IUser, 'id' | 'createdAt' | 'updatedAt'>>) {
+    return prisma.user.update({
+      where: { id },
+      data,
+    });
+  }
 }
