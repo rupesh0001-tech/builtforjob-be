@@ -1,5 +1,5 @@
 import prisma from '../../config/database/db';
-import { IUser } from '../../interfaces/user.interface';
+import type { IUser } from '../../interfaces/user.interface';
 
 export class UserService {
   static async findByEmail(email: string) {
@@ -11,6 +11,12 @@ export class UserService {
   static async findById(id: string) {
     return prisma.user.findUnique({
       where: { id },
+      include: {
+        skills: true,
+        experience: true,
+        education: true,
+        projects: true,
+      }
     });
   }
 
@@ -32,10 +38,54 @@ export class UserService {
     });
   }
 
-  static async updateUser(id: string, data: Partial<Omit<IUser, 'id' | 'createdAt' | 'updatedAt'>>) {
+  static async updateUser(id: string, data: any) {
+    const { skills, experience, education, projects, ...basicData } = data;
+
     return prisma.user.update({
       where: { id },
-      data,
+      data: {
+        ...basicData,
+        skills: skills ? {
+          deleteMany: {},
+          create: skills.map((s: any) => ({ name: s.name }))
+        } : undefined,
+        experience: experience ? {
+          deleteMany: {},
+          create: experience.map((e: any) => ({
+            company: e.company,
+            position: e.position,
+            startDate: e.startDate,
+            endDate: e.endDate,
+            description: e.description,
+            isCurrent: !!e.isCurrent
+          }))
+        } : undefined,
+        education: education ? {
+          deleteMany: {},
+          create: education.map((ed: any) => ({
+            institution: ed.institution,
+            degree: ed.degree,
+            field: ed.field,
+            graduationDate: ed.graduationDate,
+            gpa: ed.gpa,
+            graduationType: ed.graduationType
+          }))
+        } : undefined,
+        projects: projects ? {
+          deleteMany: {},
+          create: projects.map((p: any) => ({
+            name: p.name,
+            techStack: p.techStack,
+            description: p.description
+          }))
+        } : undefined,
+      },
+      include: {
+        skills: true,
+        experience: true,
+        education: true,
+        projects: true,
+      }
     });
   }
 }

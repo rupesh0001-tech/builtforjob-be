@@ -17,14 +17,74 @@ model User {
   password  String
   firstName String
   lastName  String
+  phone     String?
+  bio       String?
+  location  String?
+  avatarUrl String?
+  jobTitle  String?
   isVerified Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Profile Builder Relations
+  skills      Skill[]
+  experience  Experience[]
+  education   Education[]
+  projects    Project[]
+  socialLinks Json?    @default("{}")
 
   otps              OTP[]
   passwordResetTokens PasswordResetToken[]
 
   @@map("users")
+}
+
+model Skill {
+  id     String @id @default(uuid())
+  name   String
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("skills")
+}
+
+model Experience {
+  id          String   @id @default(uuid())
+  company     String
+  position    String
+  startDate   String
+  endDate     String?
+  description String?
+  isCurrent   Boolean  @default(false)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("experiences")
+}
+
+model Education {
+  id             String   @id @default(uuid())
+  institution    String
+  degree         String
+  field          String
+  graduationDate String
+  gpa            String?
+  graduationType String?  // e.g. "cgpa" or "percentage"
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("educations")
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  name        String
+  techStack   String?
+  description String?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("projects")
 }
 
 model OTP {
