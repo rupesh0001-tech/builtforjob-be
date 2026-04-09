@@ -41,10 +41,23 @@ export class UserService {
   static async updateUser(id: string, data: any) {
     const { skills, experience, education, projects, ...basicData } = data;
 
+    // Strict whitelisting of allowed fields to prevent Prisma errors with internal fields
+    const allowedFields = [
+      'firstName', 'lastName', 'phone', 'location', 
+      'jobTitle', 'bio', 'socialLinks'
+    ];
+
+    const filteredData: any = {};
+    allowedFields.forEach(field => {
+      if (basicData[field] !== undefined) {
+        filteredData[field] = basicData[field];
+      }
+    });
+
     return prisma.user.update({
       where: { id },
       data: {
-        ...basicData,
+        ...filteredData,
         skills: skills ? {
           deleteMany: {},
           create: skills.map((s: any) => ({ name: s.name }))
