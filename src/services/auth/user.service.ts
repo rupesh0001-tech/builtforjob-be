@@ -60,7 +60,10 @@ export class UserService {
         ...filteredData,
         skills: skills ? {
           deleteMany: {},
-          create: skills.map((s: any) => ({ name: s.name }))
+          create: skills.map((s: any) => ({ 
+            name: s.name,
+            isGithubSynced: !!s.isGithubSynced
+          }))
         } : undefined,
         experience: experience ? {
           deleteMany: {},
@@ -89,7 +92,8 @@ export class UserService {
           create: projects.map((p: any) => ({
             name: p.name,
             techStack: p.techStack,
-            description: p.description
+            description: p.description,
+            isGithubSynced: !!p.isGithubSynced
           }))
         } : undefined,
       },
