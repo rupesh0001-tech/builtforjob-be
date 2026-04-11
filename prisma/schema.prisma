@@ -36,7 +36,55 @@ model User {
   otps              OTP[]
   passwordResetTokens PasswordResetToken[]
 
+  // Document Management
+  resumes      Resume[]
+  coverLetters CoverLetter[]
+
   @@map("users")
+}
+
+model Resume {
+  id          String   @id @default(uuid())
+  title       String
+  company     String?
+  template    String   @default("Modern")
+  content     Json?    // Snapshot of the resume data
+  isMagic     Boolean  @default(false)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  versions    ResumeVersion[]
+
+  @@map("resumes")
+}
+
+model ResumeVersion {
+  id          String   @id @default(uuid())
+  company     String?
+  role        String
+  resumeId    String
+  resume      Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  status      String   @default("Active") // e.g., "Active", "Applied", "Draft"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("resume_versions")
+}
+
+model CoverLetter {
+  id          String   @id @default(uuid())
+  title       String
+  company     String?
+  recipient   String?
+  content     String?   @db.Text
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("cover_letters")
 }
 
 model Skill {
