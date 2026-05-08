@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { checkATS, extractResume } from '../../controllers/ats/ats.controller';
+import { checkATS, extractResume, getSuggestions } from '../../controllers/ats/ats.controller';
 import { authenticateJWT } from '../../middlewares/auth/jwt.middleware';
 import { validate, validateFile } from '../../middlewares/validation/validator.middleware';
 import { atsCheckSchema, atsFileSchema } from '../../validators/ats.validator';
@@ -30,6 +30,16 @@ router.post(
   validateFile(atsFileSchema),
   validate(atsCheckSchema),
   checkATS as any
+);
+
+// POST /ats/suggestions – get AI suggestions (protected)
+router.post(
+  '/suggestions',
+  authenticateJWT,
+  upload.single('resume'),
+  validateFile(atsFileSchema),
+  validate(atsCheckSchema),
+  getSuggestions as any
 );
 
 // POST /ats/extract – extract text only (protected)

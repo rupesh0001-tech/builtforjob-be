@@ -1,7 +1,12 @@
 const { PDFParse } = require('pdf-parse');
 import { InferenceClient } from "@huggingface/inference";
+import { GoogleGenAI } from "@google/genai";
 
 const hf = new InferenceClient(process.env.HF_TOKEN);
+const ai = new GoogleGenAI({ 
+  apiKey: process.env.GEMINI_API_KEY || "",
+  apiVersion: "v1"
+});
 
 /**
  * Extracts plain text from a PDF buffer using pdf-parse
@@ -51,22 +56,81 @@ export const computeATSScore = async (
     const similarityScore = Array.isArray(output) ? output[0] : (output as any);
     const score = Math.round(similarityScore * 100);
 
-    let details = `The semantic similarity between your resume and the job description is ${score}%.`;
-    
-    if (score > 80) {
-      details += " Excellent match! Your resume is highly relevant to this role.";
-    } else if (score > 50) {
-      details += " Good match. Consider adding more specific keywords from the job description to improve your score.";
-    } else {
-      details += " Low match. You may want to tailor your resume more closely to the requirements of this role.";
-    }
-
     return {
       score,
-      details
+      details: "" // Suggestions moved to separate call
     };
   } catch (error: any) {
     console.error("Hugging Face Error:", error);
-    throw new Error(`AI analysis failed: ${error.message}`);
+    throw new Error(`Similarity analysis failed: ${error.message}`);
+  }
+};
+
+/**
+ * Gets improvement suggestions using Gemini (via new @google/genai SDK).
+ */
+export const getImprovementSuggestions = async (
+  resumeText: string,
+  jobDescription: string
+): Promise<string> => {
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error('Gemini API key is not configured.');
+  }
+
+  const prompt = `
+    You are an expert Career Coach and ATS Optimizer. 
+    Analyze the provided Resume and Job Description.
+    
+    Resume:
+    ${resumeText.slice(0, 6000)}
+
+    Job Description:
+    ${jobDescription.slice(0, 4000)}
+
+    Provide a concise analysis of what is missing or what could be improved in the resume to better match the job description.
+    Focus on:
+    1. Missing key skills/keywords.
+    2. Experience alignment.
+    3. Actionable tips to improve the ATS score.
+
+    Format the response in clear bullet points. Keep it under 200 words.
+  `;
+
+  try {
+    // List of models to try in order of preference
+    const modelsToTry = [
+      "gemini-3-flash-preview",
+      "gemini-2.5-flash",
+      "gemini-2.0-flash-exp",
+      "gemini-1.5-flash",
+      "gemini-pro"
+    ];
+
+    let lastError = null;
+
+    for (const modelName of modelsToTry) {
+      try {
+        console.log(`Attempting suggestions with model: ${modelName}...`);
+        const response = await ai.models.generateContent({
+          model: modelName,
+          contents: prompt,
+        });
+        
+        if (response && response.text) {
+          console.log(`Success with model: ${modelName}`);
+          return response.text;
+        }
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`Model ${modelName} failed: ${err.message}`);
+        // Continue to next model
+      }
+    }
+
+    // If we reach here, all models failed
+    throw lastError || new Error("All Gemini models failed to generate content.");
+  } catch (error: any) {
+    console.error("Gemini Error:", error);
+    throw new Error(`Failed to generate suggestions: ${error.message}`);
   }
 };

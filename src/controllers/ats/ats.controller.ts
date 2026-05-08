@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import { extractTextFromPDF, computeATSScore } from '../../services/ats/ats.service';
+import { extractTextFromPDF, computeATSScore, getImprovementSuggestions } from '../../services/ats/ats.service';
 
 /**
  * POST /ats/check
@@ -25,6 +25,31 @@ export const checkATS = async (req: Request, res: Response, next: NextFunction) 
         details,
         resumeWordCount: resumeText.split(/\s+/).filter(Boolean).length,
         jdWordCount: jobDescription.trim().split(/\s+/).filter(Boolean).length,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /ats/suggestions
+ * Multipart form body:
+ *   - resume: PDF file
+ *   - jobDescription: string
+ */
+export const getSuggestions = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const file = req.file!;
+    const { jobDescription } = req.body;
+
+    const resumeText = await extractTextFromPDF(file.buffer);
+    const suggestions = await getImprovementSuggestions(resumeText, jobDescription.trim());
+
+    return res.json({
+      success: true,
+      data: {
+        suggestions,
       },
     });
   } catch (error) {
