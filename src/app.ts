@@ -3,6 +3,7 @@ import cors from 'cors';
 import { userRouter } from './routes/user/user.routes';
 import { otpRouter } from './routes/otp/otp.routes';
 import { atsRouter } from './routes/ats/ats.routes';
+import versionsRouter from './routes/versions/versions.routes';
 import { errorMiddleware } from './middlewares/error/error.middleware';
 
 const app = express();
@@ -20,6 +21,7 @@ app.use(express.json());
 app.use('/user', userRouter);
 app.use('/verify', otpRouter);
 app.use('/ats', atsRouter);
+app.use('/versions', versionsRouter);
 
 // Root
 app.get('/', (req, res) => {

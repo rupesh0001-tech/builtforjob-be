@@ -39,6 +39,7 @@ model User {
   // Document Management
   resumes      Resume[]
   coverLetters CoverLetter[]
+  versions      ApplicationVersion[]
 
   @@map("users")
 }
@@ -165,6 +166,20 @@ model PasswordResetToken {
 
   @@index([token, isUsed])
   @@map("password_reset_tokens")
+}
+
+model ApplicationVersion {
+  id               String   @id @default(uuid())
+  versionName      String
+  companyName      String
+  resumeUrl        String
+  coverLetterUrl   String?
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("application_versions")
 }
 
 enum OTPType {
