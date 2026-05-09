@@ -32,39 +32,128 @@ export const extractTextFromPDF = async (pdfBuffer: Buffer): Promise<string> => 
 };
 
 /**
- * Computes ATS similarity score between resume text and job description using Hugging Face.
+ * Normalizes text for comparison.
+ */
+const normalizeText = (text: string) => text.toLowerCase().replace(/[^\w\s]/g, '');
+
+/**
+ * Fallback keyword score calculation.
+ */
+const calculateKeywordScore = (resume: string, jd: string): number => {
+  const jdKeywords = jd.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+  const uniqueKeywords = Array.from(new Set(jdKeywords));
+  const foundCount = uniqueKeywords.filter(w => resume.toLowerCase().includes(w)).length;
+  return Math.round((foundCount / Math.max(1, uniqueKeywords.length)) * 100);
+};
+
+/**
+ * Computes ATS similarity score between resume text and job description.
+ * Uses Gemini (AI) for professional-grade analysis, with keyword matching as a fallback.
  */
 export const computeATSScore = async (
   resumeText: string,
   jobDescription: string
 ): Promise<{ score: number; details: string }> => {
-  if (!process.env.HF_TOKEN) {
-    throw new Error('Hugging Face token (HF_TOKEN) is not configured on the server.');
+  if (!resumeText || !jobDescription) {
+    return { score: 0, details: "Missing resume or job description text." };
   }
 
-  try {
-    const output = await hf.sentenceSimilarity({
-      model: "sentence-transformers/all-MiniLM-L6-v2",
-      inputs: {
-        source_sentence: jobDescription,
-        sentences: [resumeText]
-      },
-      provider: "hf-inference",
-    });
+  const cleanResume = normalizeText(resumeText);
+  const cleanJD = normalizeText(jobDescription);
 
-    // The output is an array of similarity scores for each sentence in 'sentences'
-    // Since we only passed one 'resumeText', we take the first index.
-    const similarityScore = Array.isArray(output) ? output[0] : (output as any);
-    const score = Math.round(similarityScore * 100);
-
-    return {
-      score,
-      details: "" // Suggestions moved to separate call
-    };
-  } catch (error: any) {
-    console.error("Hugging Face Error:", error);
-    throw new Error(`Similarity analysis failed: ${error.message}`);
+  // 1. Exact/Near-Exact Match Check (Fast path)
+  if (cleanResume === cleanJD || cleanResume.includes(cleanJD) || cleanJD.includes(cleanResume)) {
+    return { score: 100, details: "Perfect content match detected." };
   }
+
+  // 2. AI-Powered Professional Scoring (Groq Primary)
+  if (process.env.GROQ_API_KEY) {
+    try {
+      const prompt = `
+        As a technical ATS (Applicant Tracking System), calculate the match score (0-100) for this resume against the JD.
+        
+        STRICT SCORING CRITERIA:
+        - 95-100%: Perfect match of core tech stack, even if project names differ.
+        - 90-95%: Strong match with synonymous technology (e.g., "MERN" matches a list of MongoDB, Express, React, Node).
+        - 80-90%: Good match, missing only minor non-essential skills.
+        - <70%: Significant gaps in core requirements.
+
+        RESUME:
+        ${resumeText}
+
+        JOB DESCRIPTION:
+        ${jobDescription}
+
+        RETURN ONLY JSON:
+        { "score": number, "justification": "Explain why in 1 sentence." }
+      `;
+
+      const completion = await groq.chat.completions.create({
+        messages: [{ role: "user", content: prompt }],
+        model: "llama-3.3-70b-versatile",
+        response_format: { type: "json_object" }
+      });
+
+      const text = completion.choices[0]?.message?.content;
+      if (text) {
+        const parsed = JSON.parse(text);
+        if (typeof parsed.score === 'number') {
+          return {
+            score: parsed.score,
+            details: parsed.justification || "ATS analysis complete."
+          };
+        }
+      }
+    } catch (error: any) {
+      console.warn("Groq scoring failed, falling back to Gemini:", error.message);
+    }
+  }
+
+  // 2b. Secondary AI Scoring (Gemini Fallback)
+  if (process.env.GEMINI_API_KEY) {
+    try {
+      const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const prompt = `Calculate ATS score (0-100) for this resume vs JD. Return JSON: { "score": number, "justification": "string" }. Resume: ${resumeText}. JD: ${jobDescription}`;
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (typeof parsed.score === 'number') {
+          return { score: parsed.score, details: parsed.justification };
+        }
+      }
+    } catch (err) {}
+  }
+
+  // 3. Fallback: Hybrid Keyword & Semantic Logic (Existing)
+  const keywordScore = calculateKeywordScore(resumeText, jobDescription);
+  let semanticScore = keywordScore;
+
+  if (process.env.HF_TOKEN) {
+    try {
+      const output = await hf.sentenceSimilarity({
+        model: "sentence-transformers/all-MiniLM-L6-v2",
+        inputs: {
+          source_sentence: jobDescription,
+          sentences: [resumeText]
+        },
+        provider: "hf-inference",
+      });
+      const similarity = Array.isArray(output) ? output[0] : (output as any);
+      semanticScore = Math.round(similarity * 100);
+    } catch (err) {
+      // ignore
+    }
+  }
+
+  const finalScore = Math.min(100, Math.round((keywordScore * 0.7) + (semanticScore * 0.3)));
+  
+  return {
+    score: finalScore,
+    details: "Calculated via keyword and semantic overlap (AI fallback)."
+  };
 };
 
 /**
@@ -121,10 +210,10 @@ export const getImprovementSuggestions = async (
     Analyze the provided Resume and Job Description.
     
     Resume:
-    ${resumeText.slice(0, 6000)}
+    ${resumeText}
 
     Job Description:
-    ${jobDescription.slice(0, 4000)}
+    ${jobDescription}
 
     Provide a highly structured analysis of specific structural and content gaps. 
     Do NOT give generic career advice like "tailor your resume". 
