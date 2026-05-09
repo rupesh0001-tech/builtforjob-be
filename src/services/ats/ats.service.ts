@@ -1,11 +1,12 @@
 const { PDFParse } = require('pdf-parse');
 import { InferenceClient } from "@huggingface/inference";
 import { GoogleGenAI } from "@google/genai";
+import Groq from "groq-sdk";
 
 const hf = new InferenceClient(process.env.HF_TOKEN);
-const ai = new GoogleGenAI({ 
-  apiKey: process.env.GEMINI_API_KEY || "",
-  apiVersion: "v1"
+const ai = new GoogleGenAI(process.env.GEMINI_API_KEY || "");
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY || ""
 });
 
 /**
@@ -67,14 +68,52 @@ export const computeATSScore = async (
 };
 
 /**
- * Gets improvement suggestions using Gemini (via new @google/genai SDK).
+ * Gets suggestions using Groq (Llama 3.3 70B) as a fallback.
+ */
+export const getGroqSuggestions = async (
+  prompt: string
+): Promise<any> => {
+  if (!process.env.GROQ_API_KEY) {
+    throw new Error('Groq API key is not configured.');
+  }
+
+  try {
+    console.log("Attempting fallback suggestions with Groq (Llama 3.3)...");
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      model: "llama-3.3-70b-versatile",
+      response_format: { type: "json_object" }
+    });
+
+    const text = completion.choices[0]?.message?.content;
+    if (text) {
+      return JSON.parse(text);
+    }
+    throw new Error("Empty response from Groq.");
+  } catch (error: any) {
+    console.error("Groq Error:", error);
+    throw new Error(`Groq fallback failed: ${error.message}`);
+  }
+};
+
+/**
+ * Gets structured improvement suggestions using Gemini (via new @google/genai SDK).
  */
 export const getImprovementSuggestions = async (
   resumeText: string,
   jobDescription: string
-): Promise<string> => {
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error('Gemini API key is not configured.');
+): Promise<{
+  improvements: Array<{ title: string; description: string; impact: number }>;
+  missingKeywords: string[];
+  missingSkills: string[];
+}> => {
+  if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY) {
+    throw new Error('No AI API keys configured.');
   }
 
   const prompt = `
@@ -87,50 +126,82 @@ export const getImprovementSuggestions = async (
     Job Description:
     ${jobDescription.slice(0, 4000)}
 
-    Provide a concise analysis of what is missing or what could be improved in the resume to better match the job description.
-    Focus on:
-    1. Missing key skills/keywords.
-    2. Experience alignment.
-    3. Actionable tips to improve the ATS score.
+    Provide a highly structured analysis of specific structural and content gaps. 
+    Do NOT give generic career advice like "tailor your resume". 
+    Instead, look for CONCRETE missing elements such as:
+    - Missing GitHub or Portfolio links.
+    - Missing Deployed/Live project URLs.
+    - Missing Contact Information (LinkedIn, Phone, etc.).
+    - Specific Technical Skills mentioned in the Job Description but absent from the Resume.
+    - Experience gaps where specific tools/technologies required are not found.
 
-    Format the response in clear bullet points. Keep it under 200 words.
+    Return ONLY a JSON object with this exact structure:
+    {
+      "improvements": [
+        { "title": "Missing Live Project Links", "description": "Add deployed URLs for your 'Project X' to prove technical competence.", "impact": 85 }
+      ],
+      "missingKeywords": ["keyword1", "keyword2"],
+      "missingSkills": ["skill1", "skill2"]
+    }
+
+    Ensure:
+    1. Exactly 3-4 concrete improvements with an "impact" percentage (0-100).
+    2. A list of missing keywords for ATS optimization.
+    3. A list of missing professional skills or experiences.
+    
+    Return ONLY the JSON. No preamble, no markdown code blocks.
   `;
 
   try {
-    // List of models to try in order of preference
     const modelsToTry = [
-      "gemini-3-flash-preview",
-      "gemini-2.5-flash",
-      "gemini-2.0-flash-exp",
       "gemini-1.5-flash",
+      "gemini-1.5-pro",
       "gemini-pro"
     ];
 
     let lastError = null;
 
+    // 1. Try Gemini Models
     for (const modelName of modelsToTry) {
       try {
-        console.log(`Attempting suggestions with model: ${modelName}...`);
-        const response = await ai.models.generateContent({
-          model: modelName,
-          contents: prompt,
-        });
+        console.log(`Attempting structured suggestions with model: ${modelName}...`);
+        const result = await ai.getGenerativeModel({ model: modelName }).generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
         
-        if (response && response.text) {
-          console.log(`Success with model: ${modelName}`);
-          return response.text;
+        if (text) {
+          // Robust JSON extraction: find first '{' and last '}'
+          const jsonMatch = text.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const cleanJson = jsonMatch[0].trim();
+            try {
+              const parsed = JSON.parse(cleanJson);
+              if (parsed.improvements && Array.isArray(parsed.improvements)) {
+                console.log(`Successfully parsed suggestions from ${modelName}`);
+                return parsed;
+              }
+            } catch (parseErr) {
+              console.warn(`JSON parse failed for ${modelName}:`, parseErr);
+            }
+          } else {
+            console.warn(`No JSON found in response from ${modelName}`);
+          }
         }
       } catch (err: any) {
         lastError = err;
         console.warn(`Model ${modelName} failed: ${err.message}`);
-        // Continue to next model
       }
     }
 
-    // If we reach here, all models failed
-    throw lastError || new Error("All Gemini models failed to generate content.");
+    // 2. Fallback to Groq
+    try {
+      return await getGroqSuggestions(prompt);
+    } catch (groqErr) {
+      console.error("Groq fallback also failed.");
+      throw lastError || groqErr;
+    }
   } catch (error: any) {
-    console.error("Gemini Error:", error);
-    throw new Error(`Failed to generate suggestions: ${error.message}`);
+    console.error("AI Generation Error:", error);
+    throw new Error(`Failed to generate improvements: ${error.message}`);
   }
 };

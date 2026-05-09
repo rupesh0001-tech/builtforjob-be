@@ -48,9 +48,7 @@ export const getSuggestions = async (req: Request, res: Response, next: NextFunc
 
     return res.json({
       success: true,
-      data: {
-        suggestions,
-      },
+      data: suggestions,
     });
   } catch (error) {
     next(error);
