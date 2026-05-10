@@ -6,6 +6,7 @@ import { HashService } from '../../services/hash/hash.service';
 import { JWTService } from '../../services/jwt/jwt.service';
 import { OTPType } from '@prisma/client';
 import type { AuthRequest } from '../../middlewares/auth/jwt.middleware';
+import { uploadToImageKit } from '../../services/imagekit/imagekit.service';
 
 
 // to do : don't write the code in classes and statics 
@@ -148,6 +149,31 @@ export class UserController {
       return res.json({
         success: true,
         message: 'Profile updated successfully',
+        data: updatedUser
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+  static async uploadAvatar(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+      const file = req.file;
+      if (!file) {
+        return res.status(400).json({ success: false, message: 'No file uploaded' });
+      }
+
+      // Upload to ImageKit
+      const result = await uploadToImageKit(file.buffer, `avatar-${userId}-${Date.now()}`, "/avatars");
+
+      // Update user profile with the new avatar URL
+      const updatedUser = await UserService.updateUser(userId, { avatarUrl: result.url });
+
+      return res.json({
+        success: true,
+        message: 'Avatar uploaded successfully',
         data: updatedUser
       });
     } catch (error) {
