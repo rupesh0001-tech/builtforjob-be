@@ -6,26 +6,34 @@ const prisma = new PrismaClient();
 export const createVersion = async (data: {
   versionName: string;
   companyName: string;
-  resumeBuffer: Buffer;
-  resumeName: string;
+  resumeBuffer?: Buffer;
+  resumeName?: string;
+  resumeUrl?: string;
+  resumeId?: string;
   coverLetterBuffer?: Buffer;
   coverLetterName?: string;
+  coverLetterUrl?: string;
   userId: string;
 }) => {
-  // Upload Resume
-  const resumeUpload = await uploadToImageKit(
-    data.resumeBuffer,
-    `resume_${Date.now()}_${data.resumeName}`
-  );
+  let finalResumeUrl = data.resumeUrl;
 
-  // Upload Cover Letter if provided
-  let coverLetterUrl = null;
+  // Upload Resume if buffer provided
+  if (data.resumeBuffer && data.resumeName) {
+    const resumeUpload = await uploadToImageKit(
+      data.resumeBuffer,
+      `resume_${Date.now()}_${data.resumeName}`
+    );
+    finalResumeUrl = resumeUpload.url;
+  }
+
+  // Upload Cover Letter if buffer provided
+  let finalCoverLetterUrl = data.coverLetterUrl;
   if (data.coverLetterBuffer && data.coverLetterName) {
     const clUpload = await uploadToImageKit(
       data.coverLetterBuffer,
       `cl_${Date.now()}_${data.coverLetterName}`
     );
-    coverLetterUrl = clUpload.url;
+    finalCoverLetterUrl = clUpload.url;
   }
 
   // Save to DB
@@ -33,8 +41,9 @@ export const createVersion = async (data: {
     data: {
       versionName: data.versionName,
       companyName: data.companyName,
-      resumeUrl: resumeUpload.url,
-      coverLetterUrl,
+      resumeUrl: finalResumeUrl,
+      resumeId: data.resumeId,
+      coverLetterUrl: finalCoverLetterUrl,
       userId: data.userId,
     },
   });
@@ -44,6 +53,7 @@ export const getAllVersions = async (userId: string) => {
   return await prisma.applicationVersion.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
+    include: { resume: true },
   });
 };
 
