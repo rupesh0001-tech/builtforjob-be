@@ -39,6 +39,7 @@ model User {
   resumes      Resume[]
   coverLetters CoverLetter[]
   versions     ApplicationVersion[]
+  atsReports   AtsReport[]
 
   @@map("users")
 }
@@ -187,6 +188,25 @@ model ApplicationVersion {
 
   @@map("application_versions")
 }
+
+model AtsReport {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resumeName      String
+  resumeUrl       String?
+  jobDescription  String   @db.Text
+  score           Int
+  details         String   @db.Text
+  resumeWordCount Int
+  jdWordCount     Int
+  suggestions     Json?    // Stores the ATSSuggestions if unlocked
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("ats_reports")
+}
+
 
 enum OTPType {
   REGISTRATION
