@@ -5,6 +5,7 @@ import { otpRouter } from './routes/otp/otp.routes';
 import { atsRouter } from './routes/ats/ats.routes';
 import versionsRouter from './routes/versions/versions.routes';
 import resumeRouter from './routes/resume/resume.routes';
+import coverLetterRouter from './routes/cover-letter/cover-letter.routes';
 import { errorMiddleware } from './middlewares/error/error.middleware';
 
 const app = express();
@@ -24,6 +25,7 @@ app.use('/verify', otpRouter);
 app.use('/ats', atsRouter);
 app.use('/versions', versionsRouter);
 app.use('/resumes', resumeRouter);
+app.use('/cover-letters', coverLetterRouter);
 
 // Root
 app.get('/', (req, res) => {
