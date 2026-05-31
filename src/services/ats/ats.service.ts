@@ -4,7 +4,7 @@ import { GoogleGenAI } from "@google/genai";
 import Groq from "groq-sdk";
 
 const hf = new InferenceClient(process.env.HF_TOKEN);
-const ai = new GoogleGenAI(process.env.GEMINI_API_KEY || "");
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY || ""
 });
@@ -112,16 +112,19 @@ export const computeATSScore = async (
   // 2b. Secondary AI Scoring (Gemini Fallback)
   if (process.env.GEMINI_API_KEY) {
     try {
-      const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
       const prompt = `Calculate ATS score (0-100) for this resume vs JD. Return JSON: { "score": number, "justification": "string" }. Resume: ${resumeText}. JD: ${jobDescription}`;
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        if (typeof parsed.score === 'number') {
-          return { score: parsed.score, details: parsed.justification };
+      const response = await ai.models.generateContent({
+        model: "gemini-1.5-flash",
+        contents: prompt,
+      });
+      const text = response.text;
+      if (text) {
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (typeof parsed.score === 'number') {
+            return { score: parsed.score, details: parsed.justification };
+          }
         }
       }
     } catch (err) {}
@@ -254,9 +257,11 @@ export const getImprovementSuggestions = async (
     for (const modelName of modelsToTry) {
       try {
         console.log(`Attempting structured suggestions with model: ${modelName}...`);
-        const result = await ai.getGenerativeModel({ model: modelName }).generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
+        const response = await ai.models.generateContent({
+          model: modelName,
+          contents: prompt,
+        });
+        const text = response.text;
         
         if (text) {
           // Robust JSON extraction: find first '{' and last '}'

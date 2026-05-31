@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { JWTService } from '../../services/jwt/jwt.service';
-import { IJWTPayload } from '../../interfaces/auth.interface';
+import type { IJWTPayload } from '../../interfaces/auth.interface';
 
 export interface AuthRequest extends Request {
   user?: IJWTPayload;

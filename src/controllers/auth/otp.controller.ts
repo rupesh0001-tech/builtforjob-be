@@ -27,7 +27,15 @@ export class OtpController {
           return res.json({
             success: true,
             message: 'Email verified successfully',
-            data: { token, user: { id: user.id, email: user.email } }
+            data: {
+              token,
+              user: {
+                id: user.id,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+              }
+            }
           });
         }
       }
@@ -52,6 +60,15 @@ export class OtpController {
 
       if (type === OTPType.REGISTRATION && user.isVerified) {
         return res.status(400).json({ success: false, message: 'Email is already verified' });
+      }
+
+      // Check resend cooldown
+      const cooldownCheck = await OTPService.checkResendCooldown(email, type as OTPType);
+      if (!cooldownCheck.canResend) {
+        return res.status(429).json({
+          success: false,
+          message: `Please wait ${cooldownCheck.remainingSeconds} seconds before requesting a new OTP.`
+        });
       }
 
       // Generate new OTP

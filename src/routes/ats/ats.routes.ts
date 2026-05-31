@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { checkATS, extractResume, getSuggestions } from '../../controllers/ats/ats.controller';
+import { checkATS, extractResume, getSuggestions, handleGetReports, handleGetReportById, handleUnlockReportSuggestions } from '../../controllers/ats/ats.controller';
 import { authenticateJWT } from '../../middlewares/auth/jwt.middleware';
 import { validate, validateFile } from '../../middlewares/validation/validator.middleware';
 import { atsCheckSchema, atsFileSchema } from '../../validators/ats.validator';
@@ -49,6 +49,27 @@ router.post(
   upload.single('resume'),
   validateFile(atsFileSchema),
   extractResume as any
+);
+
+// GET /ats/reports – list all reports (protected)
+router.get(
+  '/reports',
+  authenticateJWT,
+  handleGetReports as any
+);
+
+// GET /ats/reports/:id – get a single report (protected)
+router.get(
+  '/reports/:id',
+  authenticateJWT,
+  handleGetReportById as any
+);
+
+// POST /ats/reports/:id/unlock – unlock suggestions for saved report (protected)
+router.post(
+  '/reports/:id/unlock',
+  authenticateJWT,
+  handleUnlockReportSuggestions as any
 );
 
 export { router as atsRouter };

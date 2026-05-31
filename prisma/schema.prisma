@@ -195,6 +195,7 @@ model AtsReport {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   resumeName      String
   resumeUrl       String?
+  resumeText      String?  @db.Text
   jobDescription  String   @db.Text
   score           Int
   details         String   @db.Text

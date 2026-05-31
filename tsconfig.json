@@ -2,7 +2,7 @@
   "compilerOptions": {
     // Environment setup & latest features
     "target": "ESNext",
-    "module": "Preserve",
+    "module": "ESNext",
     "moduleDetection": "force",
     "jsx": "react-jsx",
     "allowJs": true,

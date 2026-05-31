@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import * as versionsService from "../../services/versions/versions.service";
 
 export const handleCreateVersion = async (req: Request, res: Response) => {
@@ -57,6 +57,10 @@ export const handleDeleteVersion = async (req: Request, res: Response) => {
     const userId = (req as any).user?.userId;
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    if (!id) {
+      return res.status(400).json({ message: "Version ID is required" });
     }
 
     await versionsService.deleteVersion(id, userId);

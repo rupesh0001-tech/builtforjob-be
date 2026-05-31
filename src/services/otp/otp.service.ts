@@ -37,6 +37,32 @@ export class OTPService {
     return code;
   }
 
+  static async checkResendCooldown(email: string, type: OTPType): Promise<{ canResend: boolean; remainingSeconds: number }> {
+    const lastOtp = await prisma.oTP.findFirst({
+      where: {
+        email,
+        type,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    if (!lastOtp) {
+      return { canResend: true, remainingSeconds: 0 };
+    }
+
+    const timePassedMs = Date.now() - new Date(lastOtp.createdAt).getTime();
+    const cooldownMs = 30 * 1000;
+
+    if (timePassedMs < cooldownMs) {
+      const remainingSeconds = Math.ceil((cooldownMs - timePassedMs) / 1000);
+      return { canResend: false, remainingSeconds };
+    }
+
+    return { canResend: true, remainingSeconds: 0 };
+  }
+
   static async verifyOTP(email: string, code: string, type: OTPType): Promise<{ isValid: boolean; message: string }> {
     const otp = await prisma.oTP.findFirst({
       where: {

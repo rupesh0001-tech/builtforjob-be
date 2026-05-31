@@ -1,11 +1,11 @@
 import jwt from 'jsonwebtoken';
 import { jwtConfig } from '../../config/jwt/jwt.config';
-import { IJWTPayload } from '../../interfaces/auth.interface';
+import type { IJWTPayload } from '../../interfaces/auth.interface';
 
 export class JWTService {
   static generateToken(payload: IJWTPayload, expiresIn?: string): string {
     return jwt.sign(payload, jwtConfig.secret, {
-      expiresIn: expiresIn || jwtConfig.expiresIn,
+      expiresIn: (expiresIn || jwtConfig.expiresIn) as any,
     });
   }
 

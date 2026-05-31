@@ -1,6 +1,6 @@
-import { Response, NextFunction } from 'express';
+import type { Response, NextFunction } from 'express';
 import { ResumeService } from '../../services/resume/resume.service';
-import { AuthRequest } from '../../middlewares/auth/jwt.middleware';
+import type { AuthRequest } from '../../middlewares/auth/jwt.middleware';
 
 export class ResumeController {
   static async create(req: AuthRequest, res: Response, next: NextFunction) {
@@ -25,6 +25,7 @@ export class ResumeController {
       const userId = req.user?.userId;
       const { id } = req.params;
       if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+      if (!id) return res.status(400).json({ success: false, message: 'Missing resume ID' });
 
       const resume = await ResumeService.updateResume(id, userId, req.body);
 
@@ -44,6 +45,7 @@ export class ResumeController {
       const { id } = req.params; // resumeId
       const { company, role, content } = req.body;
       if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+      if (!id) return res.status(400).json({ success: false, message: 'Missing resume ID' });
 
       const version = await ResumeService.createVersion(id, userId, { company, role, content });
 
@@ -78,6 +80,7 @@ export class ResumeController {
       const userId = req.user?.userId;
       const { id } = req.params;
       if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+      if (!id) return res.status(400).json({ success: false, message: 'Missing resume ID' });
 
       const resume = await ResumeService.getResumeById(id, userId);
       if (!resume) return res.status(404).json({ success: false, message: 'Resume not found' });
@@ -96,6 +99,7 @@ export class ResumeController {
       const userId = req.user?.userId;
       const { id } = req.params;
       if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+      if (!id) return res.status(400).json({ success: false, message: 'Missing resume ID' });
 
       await ResumeService.deleteResume(id, userId);
 
@@ -113,6 +117,7 @@ export class ResumeController {
       const userId = req.user?.userId;
       const { id } = req.params; // resumeId
       if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+      if (!id) return res.status(400).json({ success: false, message: 'Missing resume ID' });
 
       const versions = await ResumeService.getVersions(id, userId);
 
