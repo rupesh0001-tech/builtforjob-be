@@ -1,12 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
-import { JWTService } from '../../services/jwt/jwt.service';
-import type { IJWTPayload } from '../../interfaces/auth.interface';
+import { verifyToken } from '../../services/jwt/jwt.service';
 
-export interface AuthRequest extends Request {
-  user?: IJWTPayload;
-}
-
-export const authenticateJWT = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const authenticateJWT = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -20,7 +15,7 @@ export const authenticateJWT = async (req: AuthRequest, res: Response, next: Nex
     const token = authHeader.substring(7);
 
     try {
-      const decoded = JWTService.verifyToken(token);
+      const decoded = verifyToken(token);
       req.user = decoded;
       next();
     } catch (error) {

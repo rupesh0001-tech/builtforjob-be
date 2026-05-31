@@ -1,30 +1,15 @@
-export interface IUser {
-  id: string;
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  phone?: string | null;
-  bio?: string | null;
-  location?: string | null;
-  jobTitle?: string | null;
-  avatarUrl?: string | null;
-  isVerified: boolean;
-  profileSynced?: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-
-  // Profile Builder Fields
-  skills?: ISkill[];
-  experience?: IExperience[];
-  education?: IEducation[];
-  projects?: IProject[];
-  socialLinks?: any;
+export interface ISocialLinks {
+  github?: string;
+  linkedin?: string;
+  twitter?: string;
+  portfolio?: string;
+  website?: string;
 }
 
 export interface ISkill {
   id?: string;
   name: string;
+  isGithubSynced?: boolean;
 }
 
 export interface IExperience {
@@ -52,6 +37,31 @@ export interface IProject {
   name: string;
   techStack?: string | null;
   description?: string | null;
+  isGithubSynced?: boolean;
+}
+
+export interface IUser {
+  id: string;
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone?: string | null;
+  bio?: string | null;
+  location?: string | null;
+  jobTitle?: string | null;
+  avatarUrl?: string | null;
+  isVerified: boolean;
+  profileSynced?: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+
+  // Profile Builder Fields
+  skills?: ISkill[];
+  experience?: IExperience[];
+  education?: IEducation[];
+  projects?: IProject[];
+  socialLinks?: ISocialLinks | null;
 }
 
 export interface IUserResponse {

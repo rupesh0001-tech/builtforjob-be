@@ -1,17 +1,21 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { checkATS, extractResume, getSuggestions, handleGetReports, handleGetReportById, handleUnlockReportSuggestions } from '../../controllers/ats/ats.controller';
+import { checkATS } from '../../controllers/ats/check-ats.controller';
+import { getSuggestions } from '../../controllers/ats/get-suggestions.controller';
+import { extractResume } from '../../controllers/ats/extract-resume.controller';
+import { getReports } from '../../controllers/ats/get-reports.controller';
+import { getReportById } from '../../controllers/ats/get-report-by-id.controller';
+import { unlockReportSuggestions } from '../../controllers/ats/unlock-report-suggestions.controller';
 import { authenticateJWT } from '../../middlewares/auth/jwt.middleware';
 import { validate, validateFile } from '../../middlewares/validation/validator.middleware';
 import { atsCheckSchema, atsFileSchema } from '../../validators/ats.validator';
 
 const router = Router();
 
-// Store file in memory (buffer) – no disk I/O needed
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5 MB max
+    fileSize: 5 * 1024 * 1024,
   },
   fileFilter: (_req, file, cb) => {
     if (file.mimetype === 'application/pdf') {
@@ -22,54 +26,48 @@ const upload = multer({
   },
 });
 
-// POST /ats/check  – full ATS score (protected)
 router.post(
   '/check',
   authenticateJWT,
   upload.single('resume'),
   validateFile(atsFileSchema),
   validate(atsCheckSchema),
-  checkATS as any
+  checkATS
 );
 
-// POST /ats/suggestions – get AI suggestions (protected)
 router.post(
   '/suggestions',
   authenticateJWT,
   upload.single('resume'),
   validateFile(atsFileSchema),
   validate(atsCheckSchema),
-  getSuggestions as any
+  getSuggestions
 );
 
-// POST /ats/extract – extract text only (protected)
 router.post(
   '/extract',
   authenticateJWT,
   upload.single('resume'),
   validateFile(atsFileSchema),
-  extractResume as any
+  extractResume
 );
 
-// GET /ats/reports – list all reports (protected)
 router.get(
   '/reports',
   authenticateJWT,
-  handleGetReports as any
+  getReports
 );
 
-// GET /ats/reports/:id – get a single report (protected)
 router.get(
   '/reports/:id',
   authenticateJWT,
-  handleGetReportById as any
+  getReportById
 );
 
-// POST /ats/reports/:id/unlock – unlock suggestions for saved report (protected)
 router.post(
   '/reports/:id/unlock',
   authenticateJWT,
-  handleUnlockReportSuggestions as any
+  unlockReportSuggestions
 );
 
 export { router as atsRouter };

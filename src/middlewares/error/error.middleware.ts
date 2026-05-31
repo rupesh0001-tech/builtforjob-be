@@ -1,10 +1,10 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction, ErrorRequestHandler } from 'express';
+import type { IHttpError } from '../../interfaces/error.interface';
 
-export const errorMiddleware = (err: any, req: Request, res: Response, next: NextFunction) => {
-  const statusCode = err.statusCode || 500;
+export const errorMiddleware: ErrorRequestHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
+  const statusCode = (err as Partial<IHttpError>).statusCode || 500;
   const message = err.message || 'Internal Server Error';
 
-  // Only log to console if in development mode
   if (process.env.NODE_ENV === 'development') {
     console.error(' [Backend Error Log] ');
     console.error(`Path: ${req.path}`);

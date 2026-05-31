@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import { authRouter } from './routes/auth/auth.routes';
 import { userRouter } from './routes/user/user.routes';
 import { otpRouter } from './routes/otp/otp.routes';
 import { atsRouter } from './routes/ats/ats.routes';
@@ -16,10 +17,10 @@ app.use(cors({
   credentials: true,
 }));
 
-
 app.use(express.json());
 
 // Routes
+app.use('/auth', authRouter);
 app.use('/user', userRouter);
 app.use('/verify', otpRouter);
 app.use('/ats', atsRouter);
@@ -33,7 +34,7 @@ app.get('/', (req, res) => {
 });
 
 // Error handling middleware (must be last)
-app.use(errorMiddleware as any);
+app.use(errorMiddleware);
 
 const PORT = process.env.PORT || 5000;
 

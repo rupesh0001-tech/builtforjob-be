@@ -1,13 +1,6 @@
+import { hf, ai, groq } from '../../config/ai.config';
+import type { IATSSuggestionsResult, IATSScoreResult } from '../../interfaces/ats.interface';
 const { PDFParse } = require('pdf-parse');
-import { InferenceClient } from "@huggingface/inference";
-import { GoogleGenAI } from "@google/genai";
-import Groq from "groq-sdk";
-
-const hf = new InferenceClient(process.env.HF_TOKEN);
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY || ""
-});
 
 /**
  * Extracts plain text from a PDF buffer using pdf-parse
@@ -21,10 +14,10 @@ export const extractTextFromPDF = async (pdfBuffer: Buffer): Promise<string> => 
       throw new Error('Could not extract any text from the PDF. The file may be scanned or image-based.');
     }
     return text;
-  } catch (error: any) {
-    throw new Error(`Failed to parse PDF: ${error.message}`);
+  } catch (error: unknown) {
+    const err = error as Error;
+    throw new Error(`Failed to parse PDF: ${err.message}`);
   } finally {
-    // Always call destroy() to free memory as per documentation
     if (parser && typeof parser.destroy === 'function') {
       await parser.destroy();
     }
@@ -34,7 +27,7 @@ export const extractTextFromPDF = async (pdfBuffer: Buffer): Promise<string> => 
 /**
  * Normalizes text for comparison.
  */
-const normalizeText = (text: string) => text.toLowerCase().replace(/[^\w\s]/g, '');
+const normalizeText = (text: string): string => text.toLowerCase().replace(/[^\w\s]/g, '');
 
 /**
  * Fallback keyword score calculation.
@@ -53,7 +46,7 @@ const calculateKeywordScore = (resume: string, jd: string): number => {
 export const computeATSScore = async (
   resumeText: string,
   jobDescription: string
-): Promise<{ score: number; details: string }> => {
+): Promise<IATSScoreResult> => {
   if (!resumeText || !jobDescription) {
     return { score: 0, details: "Missing resume or job description text." };
   }
@@ -61,12 +54,10 @@ export const computeATSScore = async (
   const cleanResume = normalizeText(resumeText);
   const cleanJD = normalizeText(jobDescription);
 
-  // 1. Exact/Near-Exact Match Check (Fast path)
   if (cleanResume === cleanJD || cleanResume.includes(cleanJD) || cleanJD.includes(cleanResume)) {
     return { score: 100, details: "Perfect content match detected." };
   }
 
-  // 2. AI-Powered Professional Scoring (Groq Primary)
   if (process.env.GROQ_API_KEY) {
     try {
       const prompt = `
@@ -96,7 +87,7 @@ export const computeATSScore = async (
 
       const text = completion.choices[0]?.message?.content;
       if (text) {
-        const parsed = JSON.parse(text);
+        const parsed = JSON.parse(text) as { score: number; justification?: string };
         if (typeof parsed.score === 'number') {
           return {
             score: parsed.score,
@@ -104,12 +95,12 @@ export const computeATSScore = async (
           };
         }
       }
-    } catch (error: any) {
-      console.warn("Groq scoring failed, falling back to Gemini:", error.message);
+    } catch (error: unknown) {
+      const err = error as Error;
+      console.warn("Groq scoring failed, falling back to Gemini:", err.message);
     }
   }
 
-  // 2b. Secondary AI Scoring (Gemini Fallback)
   if (process.env.GEMINI_API_KEY) {
     try {
       const prompt = `Calculate ATS score (0-100) for this resume vs JD. Return JSON: { "score": number, "justification": "string" }. Resume: ${resumeText}. JD: ${jobDescription}`;
@@ -121,7 +112,7 @@ export const computeATSScore = async (
       if (text) {
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
+          const parsed = JSON.parse(jsonMatch[0]) as { score: number; justification: string };
           if (typeof parsed.score === 'number') {
             return { score: parsed.score, details: parsed.justification };
           }
@@ -130,7 +121,6 @@ export const computeATSScore = async (
     } catch (err) {}
   }
 
-  // 3. Fallback: Hybrid Keyword & Semantic Logic (Existing)
   const keywordScore = calculateKeywordScore(resumeText, jobDescription);
   let semanticScore = keywordScore;
 
@@ -144,11 +134,9 @@ export const computeATSScore = async (
         },
         provider: "hf-inference",
       });
-      const similarity = Array.isArray(output) ? output[0] : (output as any);
+      const similarity = Array.isArray(output) ? (output[0] as number) : (output as number);
       semanticScore = Math.round(similarity * 100);
-    } catch (err) {
-      // ignore
-    }
+    } catch (err) {}
   }
 
   const finalScore = Math.min(100, Math.round((keywordScore * 0.7) + (semanticScore * 0.3)));
@@ -164,7 +152,7 @@ export const computeATSScore = async (
  */
 export const getGroqSuggestions = async (
   prompt: string
-): Promise<any> => {
+): Promise<IATSSuggestionsResult> => {
   if (!process.env.GROQ_API_KEY) {
     throw new Error('Groq API key is not configured.');
   }
@@ -184,12 +172,13 @@ export const getGroqSuggestions = async (
 
     const text = completion.choices[0]?.message?.content;
     if (text) {
-      return JSON.parse(text);
+      return JSON.parse(text) as IATSSuggestionsResult;
     }
     throw new Error("Empty response from Groq.");
-  } catch (error: any) {
-    console.error("Groq Error:", error);
-    throw new Error(`Groq fallback failed: ${error.message}`);
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error("Groq Error:", err);
+    throw new Error(`Groq fallback failed: ${err.message}`);
   }
 };
 
@@ -199,11 +188,7 @@ export const getGroqSuggestions = async (
 export const getImprovementSuggestions = async (
   resumeText: string,
   jobDescription: string
-): Promise<{
-  improvements: Array<{ title: string; description: string; impact: number }>;
-  missingKeywords: string[];
-  missingSkills: string[];
-}> => {
+): Promise<IATSSuggestionsResult> => {
   if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY) {
     throw new Error('No AI API keys configured.');
   }
@@ -251,9 +236,8 @@ export const getImprovementSuggestions = async (
       "gemini-pro"
     ];
 
-    let lastError = null;
+    let lastError: Error | null = null;
 
-    // 1. Try Gemini Models
     for (const modelName of modelsToTry) {
       try {
         console.log(`Attempting structured suggestions with model: ${modelName}...`);
@@ -264,12 +248,11 @@ export const getImprovementSuggestions = async (
         const text = response.text;
         
         if (text) {
-          // Robust JSON extraction: find first '{' and last '}'
           const jsonMatch = text.match(/\{[\s\S]*\}/);
           if (jsonMatch) {
             const cleanJson = jsonMatch[0].trim();
             try {
-              const parsed = JSON.parse(cleanJson);
+              const parsed = JSON.parse(cleanJson) as IATSSuggestionsResult;
               if (parsed.improvements && Array.isArray(parsed.improvements)) {
                 console.log(`Successfully parsed suggestions from ${modelName}`);
                 return parsed;
@@ -281,21 +264,23 @@ export const getImprovementSuggestions = async (
             console.warn(`No JSON found in response from ${modelName}`);
           }
         }
-      } catch (err: any) {
-        lastError = err;
-        console.warn(`Model ${modelName} failed: ${err.message}`);
+      } catch (err: unknown) {
+        const errorObject = err as Error;
+        lastError = errorObject;
+        console.warn(`Model ${modelName} failed: ${errorObject.message}`);
       }
     }
 
-    // 2. Fallback to Groq
     try {
       return await getGroqSuggestions(prompt);
-    } catch (groqErr) {
+    } catch (groqErr: unknown) {
+      const errorObject = groqErr as Error;
       console.error("Groq fallback also failed.");
-      throw lastError || groqErr;
+      throw lastError || errorObject;
     }
-  } catch (error: any) {
-    console.error("AI Generation Error:", error);
-    throw new Error(`Failed to generate improvements: ${error.message}`);
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error("AI Generation Error:", err);
+    throw new Error(`Failed to generate improvements: ${err.message}`);
   }
 };

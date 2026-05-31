@@ -1,34 +1,32 @@
-import ImageKit from "imagekit";
+import { imagekit } from "../../config/imagekit.config";
 
-const imagekit = new ImageKit({
-  publicKey: process.env.IMAGEKIT_PUBLIC_KEY || "",
-  privateKey: process.env.IMAGEKIT_PRIVATE_KEY || "",
-  urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT || "",
-});
-
-export const uploadToImageKit = async (
+export async function uploadToImageKit(
   fileBuffer: Buffer,
   fileName: string,
   folder: string = "/versions"
-) => {
+): Promise<{ url: string; fileId: string }> {
   try {
     const result = await imagekit.upload({
       file: fileBuffer,
       fileName: fileName,
       folder: folder,
     });
-    return result;
-  } catch (error: any) {
-    console.error("ImageKit Upload Error:", error);
-    throw new Error(`Failed to upload file to ImageKit: ${error.message}`);
+    return {
+      url: result.url,
+      fileId: result.fileId,
+    };
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error("ImageKit Upload Error:", err);
+    throw new Error(`Failed to upload file to ImageKit: ${err.message}`);
   }
-};
+}
 
-export const deleteFromImageKit = async (fileId: string) => {
+export async function deleteFromImageKit(fileId: string): Promise<void> {
   try {
     await imagekit.deleteFile(fileId);
-  } catch (error: any) {
-    console.error("ImageKit Delete Error:", error);
-    // We don't necessarily want to throw here if the file is already gone
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error("ImageKit Delete Error:", err);
   }
-};
+}
