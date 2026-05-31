@@ -10,6 +10,7 @@ export class CoverLetterService {
     template?: string;
     content?: any;
     isDraft?: boolean;
+    isMagic?: boolean;
   }) {
     return prisma.coverLetter.create({
       data: {
@@ -39,6 +40,7 @@ export class CoverLetterService {
     template?: string;
     content?: any;
     isDraft?: boolean;
+    isMagic?: boolean;
   }) {
     return prisma.coverLetter.update({
       where: { id, userId },

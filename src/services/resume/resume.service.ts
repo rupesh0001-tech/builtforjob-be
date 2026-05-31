@@ -1,7 +1,7 @@
 import prisma from '../../config/database/db';
 
 export class ResumeService {
-  static async createResume(userId: string, data: { title?: string; template?: string; content?: any; isDraft?: boolean }) {
+  static async createResume(userId: string, data: { title?: string; template?: string; content?: any; isDraft?: boolean; isMagic?: boolean }) {
     // Handle naming logic for untitled resumes
     let finalTitle = data.title;
     if (!finalTitle) {
@@ -17,12 +17,13 @@ export class ResumeService {
         template: data.template || 'Modern',
         content: data.content || {},
         isDraft: data.isDraft !== undefined ? data.isDraft : false,
+        isMagic: data.isMagic !== undefined ? data.isMagic : false,
         userId: userId,
       }
     });
   }
 
-  static async updateResume(resumeId: string, userId: string, data: { title?: string; template?: string; content?: any; isDraft?: boolean }) {
+  static async updateResume(resumeId: string, userId: string, data: { title?: string; template?: string; content?: any; isDraft?: boolean; isMagic?: boolean }) {
     return prisma.resume.update({
       where: { id: resumeId, userId },
       data: {

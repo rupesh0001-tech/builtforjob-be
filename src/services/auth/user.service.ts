@@ -44,7 +44,8 @@ export class UserService {
     // Strict whitelisting of allowed fields to prevent Prisma errors with internal fields
     const allowedFields = [
       'firstName', 'lastName', 'phone', 'location', 
-      'jobTitle', 'bio', 'socialLinks', 'avatarUrl'
+      'jobTitle', 'bio', 'socialLinks', 'avatarUrl',
+      'profileSynced'
     ];
 
     const filteredData: any = {};

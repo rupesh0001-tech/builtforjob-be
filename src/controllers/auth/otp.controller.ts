@@ -34,6 +34,7 @@ export class OtpController {
                 email: user.email,
                 firstName: user.firstName,
                 lastName: user.lastName,
+                profileSynced: user.profileSynced,
               }
             }
           });

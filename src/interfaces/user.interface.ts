@@ -10,6 +10,7 @@ export interface IUser {
   jobTitle?: string | null;
   avatarUrl?: string | null;
   isVerified: boolean;
+  profileSynced?: boolean;
   createdAt: Date;
   updatedAt: Date;
 
