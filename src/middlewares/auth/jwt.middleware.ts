@@ -4,15 +4,18 @@ import { verifyToken } from '../../services/jwt/jwt.service';
 export const authenticateJWT = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
+    let token = req.cookies?.token;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!token && authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    }
+
+    if (!token) {
       return res.status(401).json({
         success: false,
         message: 'No token provided',
       });
     }
-
-    const token = authHeader.substring(7);
 
     try {
       const decoded = verifyToken(token);

@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { authRouter } from './routes/auth/auth.routes';
 import { userRouter } from './routes/user/user.routes';
 import { otpRouter } from './routes/otp/otp.routes';
@@ -17,6 +18,7 @@ app.use(cors({
   credentials: true,
 }));
 
+app.use(cookieParser());
 app.use(express.json());
 
 // Routes
