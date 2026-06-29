@@ -13,9 +13,22 @@ import { errorMiddleware } from './middlewares/error/error.middleware';
 
 const app = express();
 
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "http://localhost:3001",
+];
+
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+  if (process.env.FRONTEND_URL.endsWith('/')) {
+    allowedOrigins.push(process.env.FRONTEND_URL.slice(0, -1));
+  }
+}
+
 // Middlewares
 app.use(cors({
-  origin: ["http://localhost:3000", "http://localhost:5173", "http://localhost:3001"],
+  origin: allowedOrigins,
   credentials: true,
 }));
 
