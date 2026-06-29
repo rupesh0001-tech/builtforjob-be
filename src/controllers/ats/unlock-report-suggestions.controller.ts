@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { Prisma } from '@prisma/client';
 import { getImprovementSuggestions } from '../../services/ats/ats.service';
 import prisma from '../../config/db.config';
+import { deductTokens } from '../../utils/token.utils';
 
 export async function unlockReportSuggestions(req: Request, res: Response, next: NextFunction) {
   try {
@@ -29,6 +30,17 @@ export async function unlockReportSuggestions(req: Request, res: Response, next:
     const resumeText = report.resumeText || "";
     if (!resumeText) {
       return res.status(400).json({ message: "Cannot generate suggestions because resume text is missing." });
+    }
+
+    // Deduct 0.5 tokens for AI Suggestions generation (excluding main ATS check)
+    try {
+      await deductTokens(userId, 0.5);
+    } catch (tokenErr: any) {
+      return res.status(403).json({ 
+        success: false, 
+        errorType: 'INSUFFICIENT_TOKENS', 
+        message: tokenErr.message 
+      });
     }
 
     const suggestions = await getImprovementSuggestions(resumeText, report.jobDescription);

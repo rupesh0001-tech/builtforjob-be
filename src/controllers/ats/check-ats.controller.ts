@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { extractTextFromPDF, computeATSScore } from '../../services/ats/ats.service';
 import { uploadToImageKit } from '../../services/imagekit/imagekit.service';
 import prisma from '../../config/db.config';
+import { deductTokens } from '../../utils/token.utils';
 
 export async function checkATS(req: Request, res: Response, next: NextFunction) {
   try {
@@ -11,6 +12,17 @@ export async function checkATS(req: Request, res: Response, next: NextFunction) 
 
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // Deduct 1 token for an ATS scan
+    try {
+      await deductTokens(userId, 1.0);
+    } catch (tokenErr: any) {
+      return res.status(403).json({ 
+        success: false, 
+        errorType: 'INSUFFICIENT_TOKENS', 
+        message: tokenErr.message 
+      });
     }
 
     const resumeText = await extractTextFromPDF(file.buffer);

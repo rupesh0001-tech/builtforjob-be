@@ -8,6 +8,7 @@ import { atsRouter } from './routes/ats/ats.routes';
 import versionsRouter from './routes/versions/versions.routes';
 import resumeRouter from './routes/resume/resume.routes';
 import coverLetterRouter from './routes/cover-letter/cover-letter.routes';
+import { aiRouter } from './routes/ai/ai.routes';
 import { errorMiddleware } from './middlewares/error/error.middleware';
 
 const app = express();
@@ -29,6 +30,7 @@ app.use('/ats', atsRouter);
 app.use('/versions', versionsRouter);
 app.use('/resumes', resumeRouter);
 app.use('/cover-letters', coverLetterRouter);
+app.use('/ai', aiRouter);
 
 // Root
 app.get('/', (req, res) => {
