@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "bun --watch src/app.ts",
-    "build": "prisma generate",
+    "build": "prisma generate && bun build src/app.ts --outdir dist --target node",
     "start": "prisma migrate deploy && bun src/app.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
