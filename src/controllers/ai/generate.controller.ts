@@ -27,23 +27,8 @@ export async function generateAIContent(req: Request, res: Response, next: NextF
 
     let generatedText = '';
 
-    // First attempt: Gemini
-    if (process.env.GEMINI_API_KEY) {
-      try {
-        const response = await ai.models.generateContent({
-          model: "gemini-1.5-flash",
-          contents: prompt,
-        });
-        if (response.text) {
-          generatedText = response.text.trim();
-        }
-      } catch (geminiErr: any) {
-        console.error("Gemini AI generation failed:", geminiErr.message);
-      }
-    }
-
-    // Fallback: Groq (Llama 3.3)
-    if (!generatedText && process.env.GROQ_API_KEY) {
+    // First attempt: Groq (Llama 3.3)
+    if (process.env.GROQ_API_KEY) {
       try {
         const completion = await groq.chat.completions.create({
           model: "llama-3.3-70b-specdec",
@@ -54,7 +39,22 @@ export async function generateAIContent(req: Request, res: Response, next: NextF
         });
         generatedText = (completion.choices[0]?.message?.content || '').trim();
       } catch (groqErr: any) {
-        console.error("Groq fallback AI generation failed:", groqErr.message);
+        console.error("Groq AI generation failed:", groqErr.message);
+      }
+    }
+
+    // Fallback: Gemini
+    if (!generatedText && process.env.GEMINI_API_KEY) {
+      try {
+        const response = await ai.models.generateContent({
+          model: "gemini-1.5-flash",
+          contents: prompt,
+        });
+        if (response.text) {
+          generatedText = response.text.trim();
+        }
+      } catch (geminiErr: any) {
+        console.error("Gemini fallback AI generation failed:", geminiErr.message);
       }
     }
 

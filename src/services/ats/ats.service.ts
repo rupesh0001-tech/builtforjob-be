@@ -1,4 +1,4 @@
-import { hf, ai, groq } from '../../config/ai.config';
+import { ai, groq } from '../../config/ai.config';
 import type { IATSSuggestionsResult, IATSScoreResult } from '../../interfaces/ats.interface';
 const { PDFParse } = require('pdf-parse');
 
@@ -118,32 +118,15 @@ export const computeATSScore = async (
           }
         }
       }
-    } catch (err) {}
+    } catch (err: any) {
+      console.warn("Gemini scoring fallback failed:", err.message);
+    }
   }
 
   const keywordScore = calculateKeywordScore(resumeText, jobDescription);
-  let semanticScore = keywordScore;
-
-  if (process.env.HF_TOKEN) {
-    try {
-      const output = await hf.sentenceSimilarity({
-        model: "sentence-transformers/all-MiniLM-L6-v2",
-        inputs: {
-          source_sentence: jobDescription,
-          sentences: [resumeText]
-        },
-        provider: "hf-inference",
-      });
-      const similarity = Array.isArray(output) ? (output[0] as number) : (output as number);
-      semanticScore = Math.round(similarity * 100);
-    } catch (err) {}
-  }
-
-  const finalScore = Math.min(100, Math.round((keywordScore * 0.7) + (semanticScore * 0.3)));
-  
   return {
-    score: finalScore,
-    details: "Calculated via keyword and semantic overlap (AI fallback)."
+    score: keywordScore,
+    details: "Calculated via local keyword overlap (AI fallback)."
   };
 };
 
@@ -229,7 +212,17 @@ export const getImprovementSuggestions = async (
     Return ONLY the JSON. No preamble, no markdown code blocks.
   `;
 
-  try {
+  // Try Groq First
+  if (process.env.GROQ_API_KEY) {
+    try {
+      return await getGroqSuggestions(prompt);
+    } catch (groqErr: any) {
+      console.warn("Groq suggestions failed, falling back to Gemini:", groqErr.message);
+    }
+  }
+
+  // Fallback to Gemini
+  if (process.env.GEMINI_API_KEY) {
     const modelsToTry = [
       "gemini-1.5-flash",
       "gemini-1.5-pro",
@@ -240,7 +233,7 @@ export const getImprovementSuggestions = async (
 
     for (const modelName of modelsToTry) {
       try {
-        console.log(`Attempting structured suggestions with model: ${modelName}...`);
+        console.log(`Attempting fallback structured suggestions with model: ${modelName}...`);
         const response = await ai.models.generateContent({
           model: modelName,
           contents: prompt,
@@ -270,17 +263,8 @@ export const getImprovementSuggestions = async (
         console.warn(`Model ${modelName} failed: ${errorObject.message}`);
       }
     }
-
-    try {
-      return await getGroqSuggestions(prompt);
-    } catch (groqErr: unknown) {
-      const errorObject = groqErr as Error;
-      console.error("Groq fallback also failed.");
-      throw lastError || errorObject;
-    }
-  } catch (error: unknown) {
-    const err = error as Error;
-    console.error("AI Generation Error:", err);
-    throw new Error(`Failed to generate improvements: ${err.message}`);
+    if (lastError) throw lastError;
   }
+
+  throw new Error("Failed to generate suggestions using available models.");
 };
