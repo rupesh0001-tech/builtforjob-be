@@ -2,10 +2,11 @@ import type { Request, Response, NextFunction } from 'express';
 
 export async function logout(req: Request, res: Response, next: NextFunction) {
   try {
+    const isProd = process.env.NODE_ENV === 'production';
     res.clearCookie('token', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
       path: '/'
     });
 
