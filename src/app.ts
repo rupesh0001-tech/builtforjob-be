@@ -18,7 +18,8 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3001",
   "https://build-for-job-fe.vercel.app", 
-  'http://buildforjob.rupeshhh.in'
+  'http://buildforjob.rupeshhh.in',
+  'https://buildforjob.rupeshhh.in',
 ];
 
 if (process.env.FRONTEND_URL) {
