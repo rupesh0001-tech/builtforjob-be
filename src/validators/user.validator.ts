@@ -14,6 +14,7 @@ export const updateProfileSchema = z.object({
     linkedin: z.string().url().or(z.literal('')).optional(),
     twitter: z.string().url().or(z.literal('')).optional(),
     portfolio: z.string().url().or(z.literal('')).optional(),
+    website: z.string().url().or(z.literal('')).optional(),
   }).nullable().optional(),
   skills: z.array(z.object({
     name: z.string().min(1),
