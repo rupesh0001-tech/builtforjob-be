@@ -13,7 +13,7 @@ datasource db {
 model User {
   id         String   @id @default(uuid())
   email      String   @unique
-  password   String
+  password   String?
   firstName  String
   lastName   String
   phone      String?
@@ -28,6 +28,8 @@ model User {
   plan       Plan     @default(FREE)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  googleId   String?  @unique
+  githubId   String?  @unique
 
   // Profile Builder Relations
   skills      Skill[]
@@ -44,6 +46,7 @@ model User {
   coverLetters CoverLetter[]
   versions     ApplicationVersion[]
   atsReports   AtsReport[]
+  userCompanies UserCompany[]
 
   @@map("users")
 }
@@ -221,4 +224,34 @@ enum OTPType {
 enum Plan {
   FREE
   PRO
+}
+
+model CompanyProfile {
+  id                      String   @id @default(uuid())
+  name                    String   @unique
+  industry                String
+  hiringStyle             String
+  preferredSkills         String[]
+  technologiesUsed        String[]
+  engineeringCulture      String
+  atsKeywords             String[]
+  commonInterviewFocus    String
+  resumeOptimizationKeys  String[]
+  coverLetterTone         String
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@map("company_profiles")
+}
+
+model UserCompany {
+  id        String   @id @default(uuid())
+  name      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, name])
+  @@map("user_companies")
 }

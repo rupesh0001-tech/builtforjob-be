@@ -9,7 +9,21 @@ import versionsRouter from './routes/versions/versions.routes';
 import resumeRouter from './routes/resume/resume.routes';
 import coverLetterRouter from './routes/cover-letter/cover-letter.routes';
 import { aiRouter } from './routes/ai/ai.routes';
+import { companiesRouter } from './routes/companies/companies.routes';
 import { errorMiddleware } from './middlewares/error/error.middleware';
+import prisma from './config/db.config';
+import { seedCompanyProfiles } from './utils/company-seed';
+import { seedUserSampleData } from './utils/user-data-seed';
+
+// Seed static company profiles
+seedCompanyProfiles(prisma)
+  .then(() => console.log('Company profiles seeding process complete.'))
+  .catch((err) => console.error('Company profiles seeding process failed:', err));
+
+// Seed user sample data for testing
+seedUserSampleData(prisma)
+  .then(() => console.log('User sample data seeding process complete.'))
+  .catch((err) => console.error('User sample data seeding process failed:', err));
 
 const app = express();
 
@@ -47,6 +61,7 @@ app.use('/versions', versionsRouter);
 app.use('/resumes', resumeRouter);
 app.use('/cover-letters', coverLetterRouter);
 app.use('/ai', aiRouter);
+app.use('/companies', companiesRouter);
 
 // Root
 app.get('/', (req, res) => {

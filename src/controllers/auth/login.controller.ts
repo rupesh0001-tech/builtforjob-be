@@ -19,6 +19,13 @@ export async function login(req: Request, res: Response, next: NextFunction) {
       return res.status(403).json({ success: false, message: 'Please verify your email first' });
     }
 
+    if (!user.password) {
+      return res.status(400).json({
+        success: false,
+        message: 'This account was created via social login. Please sign in with Google or GitHub.'
+      });
+    }
+
     const isPasswordValid = await comparePassword(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
