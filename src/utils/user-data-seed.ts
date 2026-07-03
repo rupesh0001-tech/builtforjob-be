@@ -16,6 +16,15 @@ export async function seedUserSampleData(prisma: PrismaClient) {
 
     const userId = user.id;
 
+    // Ensure target user has PRO plan and 50 tokens
+    if (user.plan !== 'PRO' || Number(user.tokens) < 50) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { plan: 'PRO', tokens: 50.0 }
+      });
+      console.log(`Upgraded user ${targetEmail} to PRO with 50 tokens in seeder`);
+    }
+
     // 1. Seed Sample Resumes if none exist
     const resumeCount = await prisma.resume.count({ where: { userId } });
     if (resumeCount === 0) {
