@@ -11,7 +11,7 @@ async function generateAIText(prompt: string, systemMessage = "You are a profess
   if (process.env.GROQ_API_KEY) {
     try {
       const completion = await groq.chat.completions.create({
-        model: "llama-3.3-70b-specdec",
+        model: "llama-3.3-70b-versatile",
         messages: [
           { role: "system", content: systemMessage },
           { role: "user", content: prompt }

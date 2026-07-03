@@ -31,7 +31,7 @@ export async function generateAIContent(req: Request, res: Response, next: NextF
     if (process.env.GROQ_API_KEY) {
       try {
         const completion = await groq.chat.completions.create({
-          model: "llama-3.3-70b-specdec",
+          model: "llama-3.3-70b-versatile",
           messages: [
             { role: "system", content: "You are a professional resume builder assistant." },
             { role: "user", content: prompt }
