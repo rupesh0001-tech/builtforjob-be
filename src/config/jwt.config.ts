@@ -1,6 +1,6 @@
 export const jwtConfig = {
   secret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
-  expiresIn: process.env.JWT_EXPIRES_IN || '24h',
+  expiresIn: process.env.JWT_EXPIRES_IN || '14d',
 };
 
 if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
