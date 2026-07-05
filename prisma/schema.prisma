@@ -47,6 +47,7 @@ model User {
   versions     ApplicationVersion[]
   atsReports   AtsReport[]
   userCompanies UserCompany[]
+  portfolio    Portfolio?
 
   @@map("users")
 }
@@ -255,3 +256,31 @@ model UserCompany {
   @@unique([userId, name])
   @@map("user_companies")
 }
+
+model Portfolio {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  templateId String   @default("architect-prismatic")
+  data       Json? // Snapshot of the portfolio data
+  settings   Json? // Snapshot of the portfolio settings
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  responses  PortfolioResponse[]
+
+  @@map("portfolios")
+}
+
+model PortfolioResponse {
+  id          String   @id @default(uuid())
+  portfolioId String
+  portfolio   Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  name        String
+  email       String
+  message     String   @db.Text
+  createdAt   DateTime @default(now())
+
+  @@map("portfolio_responses")
+}
+

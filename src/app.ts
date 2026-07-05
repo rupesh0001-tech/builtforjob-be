@@ -10,6 +10,7 @@ import resumeRouter from './routes/resume/resume.routes';
 import coverLetterRouter from './routes/cover-letter/cover-letter.routes';
 import { aiRouter } from './routes/ai/ai.routes';
 import { companiesRouter } from './routes/companies/companies.routes';
+import portfolioRouter from './routes/portfolio/portfolio.routes';
 import { errorMiddleware } from './middlewares/error/error.middleware';
 import prisma from './config/db.config';
 
@@ -50,6 +51,7 @@ app.use('/resumes', resumeRouter);
 app.use('/cover-letters', coverLetterRouter);
 app.use('/ai', aiRouter);
 app.use('/companies', companiesRouter);
+app.use('/portfolio', portfolioRouter);
 
 // Root
 app.get('/', (req, res) => {
