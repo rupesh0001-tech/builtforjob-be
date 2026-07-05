@@ -33,7 +33,7 @@ export const errorMiddleware: ErrorRequestHandler = (err: any, req: Request, res
     statusCode === 500
   ) {
     statusCode = 500;
-    message = 'Something went wrong. Please try again.';
+    message = err.message || 'Something went wrong. Please try again.';
   }
 
   res.status(statusCode).json({
