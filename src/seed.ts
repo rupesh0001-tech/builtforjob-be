@@ -178,17 +178,56 @@ async function seed() {
       fontFamily: "Plus Jakarta Sans"
     };
 
-    // Submissions
+    // Submissions - 8 items so they span 2 pages (limit is 5) to test pagination
     const responseData = [
       {
-        name: (FIRST_NAMES[(i + 5) % FIRST_NAMES.length] as string) + " " + (LAST_NAMES[(i + 8) % LAST_NAMES.length] as string),
-        email: `recruiter${i}@company.com`,
-        message: MOCK_MESSAGES[i % MOCK_MESSAGES.length] as string
+        name: (FIRST_NAMES[(i + 1) % FIRST_NAMES.length] as string) + " " + (LAST_NAMES[(i + 2) % LAST_NAMES.length] as string),
+        email: `hiring.team${i}@google.com`,
+        message: "Your microservice optimization work is highly relevant to our cloud infra team. Let's schedule an interview.",
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2) // 2 hours ago
       },
       {
-        name: (FIRST_NAMES[(i + 12) % FIRST_NAMES.length] as string) + " " + (LAST_NAMES[(i + 15) % LAST_NAMES.length] as string),
-        email: `manager${i}@hiring.net`,
-        message: MOCK_MESSAGES[(i + 2) % MOCK_MESSAGES.length] as string
+        name: (FIRST_NAMES[(i + 3) % FIRST_NAMES.length] as string) + " " + (LAST_NAMES[(i + 4) % LAST_NAMES.length] as string),
+        email: `hr.tech${i}@netflix.com`,
+        message: "Stunning portfolio aesthetics! Are you available to connect regarding a Senior Developer role next week?",
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 6 // 6 hours ago
+        )
+      },
+      {
+        name: (FIRST_NAMES[(i + 5) % FIRST_NAMES.length] as string) + " " + (LAST_NAMES[(i + 6) % LAST_NAMES.length] as string),
+        email: `lead.architect${i}@microsoft.com`,
+        message: "Your distributed pipeline system design has impressive reliability logs. Do you have security clearance?",
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 12) // 12 hours ago
+      },
+      {
+        name: (FIRST_NAMES[(i + 7) % FIRST_NAMES.length] as string) + " " + (LAST_NAMES[(i + 8) % LAST_NAMES.length] as string),
+        email: `founder${i}@startup.io`,
+        message: "Love the clean design principles here. We're raising a seed round and need a foundational engineer. Let's grab coffee.",
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24) // 1 day ago
+      },
+      {
+        name: (FIRST_NAMES[(i + 9) % FIRST_NAMES.length] as string) + " " + (LAST_NAMES[(i + 10) % LAST_NAMES.length] as string),
+        email: `coordinator${i}@meta.com`,
+        message: "Very clean layouts and code quality metrics. Let's set up a technical screening call soon.",
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 36) // 1.5 days ago
+      },
+      {
+        name: (FIRST_NAMES[(i + 11) % FIRST_NAMES.length] as string) + " " + (LAST_NAMES[(i + 12) % LAST_NAMES.length] as string),
+        email: `pm.systems${i}@amazon.com`,
+        message: "Your stripe orchestration feature set is highly scalable. Let's discuss open positions on our payments team.",
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48) // 2 days ago
+      },
+      {
+        name: (FIRST_NAMES[(i + 13) % FIRST_NAMES.length] as string) + " " + (LAST_NAMES[(i + 14) % LAST_NAMES.length] as string),
+        email: `talent${i}@uber.com`,
+        message: "Impressive live portfolio site and clean layout. Let's set up a time to chat.",
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 72) // 3 days ago
+      },
+      {
+        name: (FIRST_NAMES[(i + 15) % FIRST_NAMES.length] as string) + " " + (LAST_NAMES[(i + 16) % LAST_NAMES.length] as string),
+        email: `engineering.lead${i}@apple.com`,
+        message: "Excellent coding practices shown in your public repos. Get in touch if you're open to career changes.",
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 96) // 4 days ago
       }
     ];
 
