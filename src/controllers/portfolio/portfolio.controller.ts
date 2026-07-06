@@ -27,18 +27,27 @@ export async function savePortfolio(req: Request, res: Response, next: NextFunct
 
     const { templateId, data, settings } = req.body;
 
+    const existing = await prisma.portfolio.findUnique({
+      where: { userId },
+    });
+
+    const mergedSettings = {
+      ...(existing?.settings as object || {}),
+      ...(settings || {}),
+    };
+
     const portfolio = await prisma.portfolio.upsert({
       where: { userId },
       update: {
         templateId,
         data,
-        settings,
+        settings: mergedSettings,
       },
       create: {
         userId,
         templateId,
         data,
-        settings,
+        settings: mergedSettings,
       },
     });
 
