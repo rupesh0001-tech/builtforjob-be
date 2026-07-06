@@ -14,6 +14,10 @@ export async function generateAIContent(req: Request, res: Response, next: NextF
       return res.status(400).json({ success: false, message: 'Prompt is required' });
     }
 
+    // Append strict raw output formatting instructions
+    const formatInstruction = "IMPORTANT: Return ONLY the exact raw text requested. Do NOT include any introductory or concluding text (such as 'Here is...', 'Certainly!', 'generated summary:', etc.), markdown code blocks, quotes, or conversational filler. Return ONLY the direct content itself.";
+    const fullPrompt = `${prompt}\n\n${formatInstruction}`;
+
     // Deduct 0.5 tokens for AI features
     try {
       await deductTokens(userId, 0.5);
@@ -33,8 +37,8 @@ export async function generateAIContent(req: Request, res: Response, next: NextF
         const completion = await groq.chat.completions.create({
           model: "llama-3.3-70b-versatile",
           messages: [
-            { role: "system", content: "You are a professional resume builder assistant." },
-            { role: "user", content: prompt }
+            { role: "system", content: "You are a professional resume builder assistant. Return ONLY the exact requested text without any introductions, headers, quotes, formatting markdown (unless requested), or conversational filler. For example, if asked to write a summary, output ONLY the summary text itself and nothing else." },
+            { role: "user", content: fullPrompt }
           ]
         });
         generatedText = (completion.choices[0]?.message?.content || '').trim();
@@ -48,7 +52,7 @@ export async function generateAIContent(req: Request, res: Response, next: NextF
       try {
         const response = await ai.models.generateContent({
           model: "gemini-1.5-flash",
-          contents: prompt,
+          contents: fullPrompt,
         });
         if (response.text) {
           generatedText = response.text.trim();

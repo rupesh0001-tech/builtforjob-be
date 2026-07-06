@@ -7,31 +7,11 @@ import prisma from '../config/db.config';
 export async function checkAndRefreshTokens(userId: string): Promise<number> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { tokens: true, lastTokenReset: true, plan: true }
+    select: { tokens: true }
   });
 
   if (!user) {
     throw new Error('User not found');
-  }
-
-  // Monthly logic is removed for FREE plan (user only gets 5 scans lifetime)
-  if (user.plan === 'FREE') {
-    return user.tokens;
-  }
-
-  // Pro Plan gets 50 credits refilled every month (30 days)
-  const now = new Date();
-  const thirtyDays = 30 * 24 * 60 * 60 * 1000;
-
-  if (!user.lastTokenReset || (now.getTime() - new Date(user.lastTokenReset).getTime()) >= thirtyDays) {
-    const updated = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        tokens: 50.0,
-        lastTokenReset: now
-      }
-    });
-    return updated.tokens;
   }
 
   return user.tokens;

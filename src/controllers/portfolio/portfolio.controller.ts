@@ -184,10 +184,6 @@ export async function getPublicPortfolio(req: Request, res: Response, next: Next
       },
       include: {
         portfolio: true,
-        skills: true,
-        experience: true,
-        education: true,
-        projects: true,
       },
     });
 
@@ -195,10 +191,17 @@ export async function getPublicPortfolio(req: Request, res: Response, next: Next
       return res.status(404).json({ error: "User not found" });
     }
 
-    const portfolio = await getOrCreatePortfolio(user);
+    if (!user.portfolio) {
+      return res.status(404).json({ error: "Portfolio not created yet" });
+    }
+
+    const settings = user.portfolio.settings as any;
+    if (!settings || !settings.isPublished) {
+      return res.status(404).json({ error: "This portfolio is private or hidden" });
+    }
 
     return res.status(200).json({
-      portfolio,
+      portfolio: user.portfolio,
       user: {
         firstName: user.firstName,
         lastName: user.lastName,

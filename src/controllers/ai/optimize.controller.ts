@@ -7,14 +7,18 @@ import { deductTokens } from '../../utils/token.utils';
 async function generateAIText(prompt: string, systemMessage = "You are a professional resume and career assistant."): Promise<string> {
   let generatedText = '';
 
+  const formatInstruction = "IMPORTANT: Return ONLY the exact raw text requested. Do NOT include any introductory or concluding text (such as 'Here is...', 'Certainly!', etc.), markdown code blocks, quotes, or conversational filler. Return ONLY the direct content itself.";
+  const fullPrompt = `${prompt}\n\n${formatInstruction}`;
+  const fullSystemMessage = `${systemMessage} Return ONLY the direct requested content, with no introductory or concluding filler.`;
+
   // 1. Try Groq (Llama 3.3)
   if (process.env.GROQ_API_KEY) {
     try {
       const completion = await groq.chat.completions.create({
         model: "llama-3.3-70b-versatile",
         messages: [
-          { role: "system", content: systemMessage },
-          { role: "user", content: prompt }
+          { role: "system", content: fullSystemMessage },
+          { role: "user", content: fullPrompt }
         ]
       });
       generatedText = (completion.choices[0]?.message?.content || '').trim();
@@ -28,7 +32,7 @@ async function generateAIText(prompt: string, systemMessage = "You are a profess
     try {
       const response = await ai.models.generateContent({
         model: "gemini-1.5-flash",
-        contents: `${systemMessage}\n\nUser request:\n${prompt}`,
+        contents: `${fullSystemMessage}\n\nUser request:\n${fullPrompt}`,
       });
       if (response.text) {
         generatedText = response.text.trim();
