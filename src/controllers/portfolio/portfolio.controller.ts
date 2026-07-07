@@ -182,40 +182,63 @@ async function getOrCreatePortfolio(user: any) {
 
 export async function getPublicPortfolio(req: Request, res: Response, next: NextFunction) {
   try {
-    const { username } = req.params;
+    const { id } = req.params;
 
-    const user = await prisma.user.findFirst({
-      where: {
-        firstName: {
-          equals: username,
-          mode: "insensitive",
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    
+    let portfolio = null;
+    let user = null;
+
+    if (id && uuidRegex.test(id)) {
+      portfolio = await prisma.portfolio.findUnique({
+        where: { id },
+        include: {
+          user: {
+            select: {
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
+          },
         },
-      },
-      include: {
-        portfolio: true,
-      },
-    });
-
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      });
+      if (portfolio) {
+        user = portfolio.user;
+      }
+    } else if (id) {
+      const foundUser = await prisma.user.findFirst({
+        where: {
+          firstName: {
+            equals: id,
+            mode: "insensitive",
+          },
+        },
+        include: {
+          portfolio: true,
+        },
+      });
+      if (foundUser && foundUser.portfolio) {
+        portfolio = foundUser.portfolio;
+        user = {
+          firstName: foundUser.firstName,
+          lastName: foundUser.lastName,
+          email: foundUser.email,
+        };
+      }
     }
 
-    if (!user.portfolio) {
-      return res.status(404).json({ error: "Portfolio not created yet" });
+    if (!portfolio || !user) {
+      return res.status(404).json({ error: "Portfolio not found" });
     }
 
-    const settings = user.portfolio.settings as any;
+    const settings = portfolio.settings as any;
     if (!settings || !settings.isPublished) {
       return res.status(404).json({ error: "This portfolio is private or hidden" });
     }
 
     return res.status(200).json({
-      portfolio: user.portfolio,
-      user: {
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-      },
+      portfolio,
+      user,
     });
   } catch (error) {
     next(error);
@@ -224,34 +247,39 @@ export async function getPublicPortfolio(req: Request, res: Response, next: Next
 
 export async function createPortfolioResponse(req: Request, res: Response, next: NextFunction) {
   try {
-    const { username } = req.params;
+    const { id } = req.params;
     const { name, email, message } = req.body;
 
     if (!name || !email || !message) {
       return res.status(400).json({ error: "Name, email, and message are required" });
     }
 
-    const user = await prisma.user.findFirst({
-      where: {
-        firstName: {
-          equals: username,
-          mode: "insensitive",
-        },
-      },
-      include: {
-        portfolio: true,
-        skills: true,
-        experience: true,
-        education: true,
-        projects: true,
-      },
-    });
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    
+    let portfolio = null;
 
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
+    if (id && uuidRegex.test(id)) {
+      portfolio = await prisma.portfolio.findUnique({
+        where: { id },
+      });
+    } else if (id) {
+      const foundUser = await prisma.user.findFirst({
+        where: {
+          firstName: {
+            equals: id,
+            mode: "insensitive",
+          },
+        },
+        include: {
+          portfolio: true,
+        },
+      });
+      portfolio = foundUser?.portfolio;
     }
 
-    const portfolio = await getOrCreatePortfolio(user);
+    if (!portfolio) {
+      return res.status(404).json({ error: "Portfolio not found" });
+    }
 
     const response = await prisma.portfolioResponse.create({
       data: {

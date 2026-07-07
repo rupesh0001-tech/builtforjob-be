@@ -11,8 +11,8 @@ import {
 const router = Router();
 
 // Public routes (for visitors viewing public portfolios and submitting responses)
-router.get("/public/:username", getPublicPortfolio);
-router.post("/public/:username/respond", createPortfolioResponse);
+router.get("/public/:id", getPublicPortfolio);
+router.post("/public/:id/respond", createPortfolioResponse);
 
 // Protected routes (for active users setting up/viewing their own portfolios)
 router.use(authenticateJWT);
