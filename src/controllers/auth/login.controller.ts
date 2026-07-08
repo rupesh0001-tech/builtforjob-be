@@ -19,6 +19,24 @@ export async function login(req: Request, res: Response, next: NextFunction) {
       return res.status(403).json({ success: false, message: 'Please verify your email first' });
     }
 
+    if (user.isBanned) {
+      if (user.bannedUntil && user.bannedUntil < new Date()) {
+        // Auto unban
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { isBanned: false, bannedUntil: null, banReason: null }
+        });
+      } else {
+        const banExpiryMsg = user.bannedUntil
+          ? ` until ${new Date(user.bannedUntil).toLocaleDateString()}`
+          : " permanently";
+        return res.status(403).json({
+          success: false,
+          message: `Your account has been banned${banExpiryMsg}. Reason: ${user.banReason || 'No reason specified'}`
+        });
+      }
+    }
+
     if (!user.password) {
       return res.status(400).json({
         success: false,

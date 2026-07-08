@@ -40,6 +40,7 @@ export interface IAuthResponse {
 }
 
 export interface IJWTPayload {
-  userId: string;
+  userId?: string;
+  adminId?: string;
   email: string;
 }

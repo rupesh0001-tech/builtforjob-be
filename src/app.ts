@@ -11,6 +11,7 @@ import coverLetterRouter from './routes/cover-letter/cover-letter.routes';
 import { aiRouter } from './routes/ai/ai.routes';
 import { companiesRouter } from './routes/companies/companies.routes';
 import portfolioRouter from './routes/portfolio/portfolio.routes';
+import { adminRouter } from './routes/admin/admin.routes';
 import { errorMiddleware } from './middlewares/error/error.middleware';
 import prisma from './config/db.config';
 
@@ -52,6 +53,7 @@ app.use('/cover-letters', coverLetterRouter);
 app.use('/ai', aiRouter);
 app.use('/companies', companiesRouter);
 app.use('/portfolio', portfolioRouter);
+app.use('/admin', adminRouter);
 
 // Root
 app.get('/', (req, res) => {

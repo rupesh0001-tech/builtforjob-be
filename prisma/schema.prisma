@@ -28,6 +28,9 @@ model User {
   plan       Plan     @default(FREE)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  isBanned   Boolean  @default(false)
+  bannedUntil DateTime?
+  banReason  String?
   googleId   String?  @unique
   githubId   String?  @unique
 
@@ -282,5 +285,16 @@ model PortfolioResponse {
   createdAt   DateTime @default(now())
 
   @@map("portfolio_responses")
+}
+
+model Admin {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("admins")
 }
 
