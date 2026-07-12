@@ -58,7 +58,6 @@ export async function verifyOtp(req: Request, res: Response, next: NextFunction)
           success: true,
           message: 'Email verified successfully',
           data: {
-            token,
             user: {
               id: user.id,
               email: user.email,

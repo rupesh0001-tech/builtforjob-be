@@ -114,7 +114,7 @@ export async function googleOAuthCallback(req: Request, res: Response, next: Nex
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
-    return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth-callback?token=${token}`);
+    return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth-callback`);
   } catch (error) {
     next(error);
   }
@@ -243,7 +243,7 @@ export async function githubOAuthCallback(req: Request, res: Response, next: Nex
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
-    return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth-callback?token=${token}`);
+    return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth-callback`);
   } catch (error) {
     next(error);
   }

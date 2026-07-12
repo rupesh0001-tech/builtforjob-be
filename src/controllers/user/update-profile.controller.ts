@@ -75,10 +75,12 @@ export async function updateProfile(req: Request, res: Response, next: NextFunct
       }
     });
 
+    const { password, ...userWithoutPassword } = updatedUser;
+
     return res.json({
       success: true,
       message: 'Profile updated successfully',
-      data: updatedUser
+      data: userWithoutPassword
     });
   } catch (error) {
     next(error);

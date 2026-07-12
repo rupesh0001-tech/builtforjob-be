@@ -63,7 +63,6 @@ export async function login(req: Request, res: Response, next: NextFunction) {
       success: true,
       message: 'Login successful',
       data: {
-        token,
         user: {
           id: user.id,
           email: user.email,

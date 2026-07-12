@@ -27,10 +27,12 @@ export async function uploadAvatar(req: Request, res: Response, next: NextFuncti
       }
     });
 
+    const { password, ...userWithoutPassword } = updatedUser;
+
     return res.json({
       success: true,
       message: 'Avatar uploaded successfully',
-      data: updatedUser
+      data: userWithoutPassword
     });
   } catch (error) {
     next(error);

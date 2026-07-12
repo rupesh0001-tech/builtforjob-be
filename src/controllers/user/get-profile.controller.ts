@@ -30,9 +30,11 @@ export async function getProfile(req: Request, res: Response, next: NextFunction
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
+    const { password, ...userWithoutPassword } = user;
+
     return res.json({
       success: true,
-      data: user
+      data: userWithoutPassword
     });
   } catch (error) {
     next(error);
