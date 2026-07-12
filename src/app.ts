@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 import { authRouter } from './routes/auth/auth.routes';
 import { userRouter } from './routes/user/user.routes';
 import { otpRouter } from './routes/otp/otp.routes';
@@ -17,20 +18,51 @@ import prisma from './config/db.config';
 
 const app = express();
 
-const allowedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:5173",
-  "http://localhost:3001",
-  "https://build-for-job-fe.vercel.app", 
-  'http://buildforjob.rupeshhh.in',
+// HIGH-04: Trust first hop proxy so req.ip is correctly resolved behind reverse proxies
+// (Vercel, Render, Railway, nginx etc.)
+app.set('trust proxy', 1);
+
+// CRIT-05: Security headers via helmet
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https://ik.imagekit.io"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: [],
+    },
+  },
+  crossOriginEmbedderPolicy: false, // Allow embedding images from ImageKit
+  hsts: {
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true,
+  },
+}));
+
+// MEDIUM-05: Only allow localhost origins in non-production environments
+const productionOrigins = [
+  'https://build-for-job-fe.vercel.app',
   'https://buildforjob.rupeshhh.in',
+  'http://buildforjob.rupeshhh.in',
 ];
 
-if (process.env.FRONTEND_URL) {
+const allowedOrigins = [...productionOrigins];
+
+if (process.env.NODE_ENV !== 'production') {
+  allowedOrigins.push(
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://localhost:3001',
+  );
+}
+
+if (process.env.FRONTEND_URL && !allowedOrigins.includes(process.env.FRONTEND_URL)) {
   allowedOrigins.push(process.env.FRONTEND_URL);
-  if (process.env.FRONTEND_URL.endsWith('/')) {
-    allowedOrigins.push(process.env.FRONTEND_URL.slice(0, -1));
-  }
 }
 
 // Middlewares
@@ -57,7 +89,7 @@ app.use('/admin', adminRouter);
 
 // Root
 app.get('/', (req, res) => {
-  res.json({ message: 'Project-Management Backend API is running' });
+  res.json({ message: 'BuildForJob Backend API is running' });
 });
 
 // Error handling middleware (must be last)

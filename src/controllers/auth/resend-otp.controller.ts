@@ -8,11 +8,15 @@ export async function resendOtp(req: Request, res: Response, next: NextFunction)
   try {
     const { email, type } = req.body;
 
+    // MEDIUM-01: Always return a generic message regardless of whether the email exists
+    // to prevent user enumeration attacks
+    const genericResponse = { success: true, message: 'If this email is registered, a new OTP will be sent.' };
+
     const user = await prisma.user.findUnique({
       where: { email },
     });
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
+      return res.json(genericResponse);
     }
 
     if (type === OTPType.REGISTRATION && user.isVerified) {
@@ -72,10 +76,7 @@ export async function resendOtp(req: Request, res: Response, next: NextFunction)
 
     await sendOTPEmail(email, code, user.firstName);
 
-    return res.json({
-      success: true,
-      message: 'A new OTP has been sent to your email',
-    });
+    return res.json(genericResponse);
   } catch (error) {
     next(error);
   }

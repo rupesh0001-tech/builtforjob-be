@@ -1,6 +1,6 @@
 import { ai, groq } from '../../config/ai.config';
 import type { IATSSuggestionsResult, IATSScoreResult } from '../../interfaces/ats.interface';
-const { PDFParse } = require('pdf-parse');
+import { PDFParse } from 'pdf-parse';
 
 /**
  * Extracts plain text from a PDF buffer using pdf-parse

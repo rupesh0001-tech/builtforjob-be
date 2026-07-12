@@ -13,7 +13,7 @@ export async function updateProfile(req: Request, res: Response, next: NextFunct
 
     const allowedFields = [
       'firstName', 'lastName', 'phone', 'location', 
-      'jobTitle', 'bio', 'socialLinks', 'avatarUrl',
+      'jobTitle', 'bio', 'socialLinks',
       'profileSynced'
     ];
 

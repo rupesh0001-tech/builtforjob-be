@@ -7,7 +7,6 @@ export const updateProfileSchema = z.object({
   bio: z.string().nullable().optional(),
   location: z.string().nullable().optional(),
   jobTitle: z.string().nullable().optional(),
-  avatarUrl: z.string().nullable().optional(),
   profileSynced: z.boolean().optional(),
   socialLinks: z.object({
     github: z.string().url().or(z.literal('')).optional(),

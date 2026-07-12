@@ -23,8 +23,10 @@ export function createRateLimiter(options: {
   message: string;
 }) {
   return (req: Request, res: Response, next: NextFunction) => {
-    // Generate key based on IP + endpoint
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip || 'unknown';
+    // HIGH-04: Use req.ip (normalized by Express trust proxy) — do NOT read x-forwarded-for directly
+    // as it is trivially spoofable by clients. Set app.set('trust proxy', 1) in app.ts to enable
+    // correct IP extraction when behind a reverse proxy.
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
     const key = `${ip}:${req.baseUrl || req.path}`;
     const now = Date.now();
 

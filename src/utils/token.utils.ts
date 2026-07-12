@@ -25,21 +25,15 @@ export async function deductTokens(userId: string, amount: number): Promise<numb
   // First run the monthly refresh check to ensure they get refills first
   await checkAndRefreshTokens(userId);
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { tokens: true }
-  });
-
-  if (!user) {
-    throw new Error('User not found');
-  }
-
-  if (user.tokens < amount) {
-    throw new Error(`Insufficient tokens. This action requires ${amount} tokens, but you only have ${user.tokens} remaining.`);
-  }
-
-  const updated = await prisma.user.update({
-    where: { id: userId },
+  // INFO-02: Atomic decrement using updateMany with a condition check on token balance
+  // to avoid concurrency issues / race conditions where tokens could go negative.
+  const updatedResult = await prisma.user.updateMany({
+    where: {
+      id: userId,
+      tokens: {
+        gte: amount
+      }
+    },
     data: {
       tokens: {
         decrement: amount
@@ -47,5 +41,21 @@ export async function deductTokens(userId: string, amount: number): Promise<numb
     }
   });
 
-  return updated.tokens;
+  if (updatedResult.count === 0) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { tokens: true }
+    });
+    if (!user) {
+      throw new Error('User not found');
+    }
+    throw new Error(`Insufficient tokens. This action requires ${amount} tokens, but you only have ${user.tokens} remaining.`);
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { tokens: true }
+  });
+
+  return user ? user.tokens : 0;
 }

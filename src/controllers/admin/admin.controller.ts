@@ -31,17 +31,34 @@ export async function adminLogin(req: Request, res: Response, next: NextFunction
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
+    // HIGH-02: Token is transmitted via httpOnly cookie only — never expose it in the response body
     return res.json({
       success: true,
       message: 'Admin login successful',
       data: {
-        token,
         admin: {
           id: admin.id,
           email: admin.email,
           name: admin.name
         }
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// Get current admin info (used for session restore on page load)
+export async function getAdminMe(req: Request, res: Response, next: NextFunction) {
+  try {
+    const admin = (req as any).admin as { id: string; email: string; name: string } | undefined;
+    if (!admin) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    return res.json({
+      success: true,
+      data: { admin },
     });
   } catch (error) {
     next(error);
