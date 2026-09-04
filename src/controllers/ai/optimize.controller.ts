@@ -11,11 +11,11 @@ async function generateAIText(prompt: string, systemMessage = "You are a profess
   const fullPrompt = `${prompt}\n\n${formatInstruction}`;
   const fullSystemMessage = `${systemMessage} Return ONLY the direct requested content, with no introductory or concluding filler.`;
 
-  // 1. Try Groq (Llama 3.3)
+  // 1. Try Groq
   if (process.env.GROQ_API_KEY) {
     try {
       const completion = await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+        model: process.env.GROQ_MODEL || "openai/gpt-oss-120b",
         messages: [
           { role: "system", content: fullSystemMessage },
           { role: "user", content: fullPrompt }

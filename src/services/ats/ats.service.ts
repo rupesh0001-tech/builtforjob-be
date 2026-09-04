@@ -81,7 +81,7 @@ export const computeATSScore = async (
 
       const completion = await groq.chat.completions.create({
         messages: [{ role: "user", content: prompt }],
-        model: "llama-3.3-70b-versatile",
+        model: process.env.GROQ_MODEL || "openai/gpt-oss-120b",
         response_format: { type: "json_object" }
       });
 
@@ -141,7 +141,7 @@ export const getGroqSuggestions = async (
   }
 
   try {
-    console.log("Attempting fallback suggestions with Groq (Llama 3.3)...");
+    console.log("Attempting fallback suggestions with Groq...");
     const completion = await groq.chat.completions.create({
       messages: [
         {
@@ -149,7 +149,7 @@ export const getGroqSuggestions = async (
           content: prompt,
         },
       ],
-      model: "llama-3.3-70b-versatile",
+      model: process.env.GROQ_MODEL || "openai/gpt-oss-120b",
       response_format: { type: "json_object" }
     });
 

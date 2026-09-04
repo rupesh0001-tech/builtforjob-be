@@ -31,11 +31,11 @@ export async function generateAIContent(req: Request, res: Response, next: NextF
 
     let generatedText = '';
 
-    // First attempt: Groq (Llama 3.3)
+    // First attempt: Groq
     if (process.env.GROQ_API_KEY) {
       try {
         const completion = await groq.chat.completions.create({
-          model: "llama-3.3-70b-versatile",
+          model: process.env.GROQ_MODEL || "openai/gpt-oss-120b",
           messages: [
             { role: "system", content: "You are a professional resume builder assistant. Return ONLY the exact requested text without any introductions, headers, quotes, formatting markdown (unless requested), or conversational filler. For example, if asked to write a summary, output ONLY the summary text itself and nothing else." },
             { role: "user", content: fullPrompt }
