@@ -18,6 +18,7 @@ const router = Router();
 
 router.post('/register', authRateLimiter, validate(registerSchema), register);
 router.post('/login', authRateLimiter, validate(loginSchema), login);
+router.post('/forgot-password', authRateLimiter, validate(forgotPasswordSchema), forgotPassword);
 router.post('/forget/password', authRateLimiter, validate(forgotPasswordSchema), forgotPassword);
 router.post('/reset-password', authRateLimiter, validate(resetPasswordSchema), resetPassword);
 router.post('/logout', logout);
